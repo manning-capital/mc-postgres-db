@@ -229,7 +229,7 @@ class ProviderContent(Base):
     content_type_id: Mapped[int] = mapped_column(
         ForeignKey("content_type.id"), nullable=False
     )
-    author: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    authors: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     content: Mapped[str] = mapped_column(String(), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
