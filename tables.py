@@ -21,7 +21,7 @@ class AssetType(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(30), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, server_default=func.now()
@@ -255,7 +255,3 @@ class AssetContent(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
-
-
-if __name__ == "__main__":
-    Base.metadata.create_all()  # Create all tables in the database
