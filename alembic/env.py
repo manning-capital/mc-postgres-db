@@ -6,7 +6,7 @@ from sqlalchemy import pool
 
 
 from alembic import context
-from tables import Base  # Import your SQLAlchemy Base class
+from src.mcpdb.tables import Base  # Import your SQLAlchemy Base class
 from dotenv import load_dotenv
 
 load_dotenv()  # Load environment variables from .env file
