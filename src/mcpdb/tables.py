@@ -20,8 +20,8 @@ class AssetType(Base):
     __tablename__ = "asset_type"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, server_default=func.now()
@@ -41,8 +41,12 @@ class Asset(Base):
     asset_type_id: Mapped[int] = mapped_column(
         ForeignKey("asset_type.id"), nullable=False
     )
-    name: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]]
+    symbol: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    underlying_asset_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("asset.id"), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, server_default=func.now()
@@ -59,7 +63,7 @@ class ProviderType(Base):
     __tablename__ = "provider_type"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
@@ -80,8 +84,12 @@ class Provider(Base):
     provider_type_id: Mapped[int] = mapped_column(
         ForeignKey("provider_type.id"), nullable=False
     )
-    name: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    symbol: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    underlying_provider_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("provider.id"), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, server_default=func.now()
@@ -147,7 +155,7 @@ class ProviderAsset(Base):
     asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"), nullable=False, primary_key=True
     )
-    asset_code: Mapped[str] = mapped_column(String(30), nullable=False)
+    asset_code: Mapped[str] = mapped_column(String(100), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, server_default=func.now()
@@ -203,7 +211,7 @@ class ContentType(Base):
     __tablename__ = "content_type"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
@@ -223,14 +231,19 @@ class ProviderContent(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     timestamp: Mapped[datetime.datetime] = mapped_column(nullable=False)
     provider_id: Mapped[int] = mapped_column(ForeignKey("provider.id"), nullable=False)
-    provider_unique_identifier: Mapped[str] = mapped_column(
-        String(1000), nullable=False
+    provider_external_code: Mapped[str] = mapped_column(
+        String(1000),
+        nullable=False,
+        comment="This is the external identifier for the content and will depend on the content provider and the type of content. For example, for a news article, it could be the URL of the article and for a social media post, it could be the post ID.",
     )
     content_type_id: Mapped[int] = mapped_column(
         ForeignKey("content_type.id"), nullable=False
     )
-    authors: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    authors: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    title: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(
+        String(5000), nullable=True, comment="A short description of the content"
+    )
     content: Mapped[str] = mapped_column(String(), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, server_default=func.now()
