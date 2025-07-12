@@ -346,7 +346,7 @@ class ProviderAssetMarket(Base):
     )
 
     def __repr__(self):
-        return f"{ProviderAssetMarket.__name__}(id={self.id}, provider_id={self.provider_id}, asset_id={self.asset_id}, market_type={self.market_type})"
+        return f"{ProviderAssetMarket.__name__}(timestamp={self.timestamp}, provider_id={self.provider_id}, asset_id={self.asset_id})"
 
 
 class ContentType(Base):
@@ -422,6 +422,36 @@ class ProviderContent(Base):
     content: Mapped[str] = mapped_column(
         String(), nullable=False, comment="The content of the provider content"
     )
+    provider_sentiment_text: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The sentiment of the provider content, could be a short text like 'positive' or 'negative' or a longer text like 'The stock is doing well' or 'The stock is doing poorly'."
+    )
+    provider_positive_sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The positive sentiment score of the provider content, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
+    provider_negative_sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The negative sentiment score of the provider content, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
+    provider_neutral_sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The neutral sentiment score of the provider content, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
+    provider_sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The sentiment score of the provider content, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
+    sentiment_text: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The sentiment score text of the provider content that is internally calculated, this is a text that describes the sentiment score."
+    )
+    positive_sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The positive sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
+    negative_sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The negative sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
+    neutral_sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The neutral sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
+    sentiment_score: Mapped[Optional[float]] = mapped_column(
+        nullable=True, comment="The sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
@@ -435,7 +465,7 @@ class ProviderContent(Base):
     )
 
     def __repr__(self):
-        return f"{ProviderContent.__name__}(id={self.id}, provider_id={self.provider_id}, content_type={self.content_type})"
+        return f"{ProviderContent.__name__}(id={self.id}, provider_id={self.provider_id}, content_type_id={self.content_type_id}, content_external_code={self.content_external_code})"
 
 
 class AssetContent(Base):
