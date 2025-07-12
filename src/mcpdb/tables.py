@@ -146,7 +146,7 @@ class Provider(Base):
         String(1000), nullable=True, comment="The description of the provider"
     )
     provider_external_code: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, comment="The external code of the provider"
+        String(100), nullable=True, comment="The external code of the provider, this is used to identify the provider in the provider's system. For example, for a news provider, it could be the name of the provider or an internal ID."
     )
     underlying_provider_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("provider.id"),
