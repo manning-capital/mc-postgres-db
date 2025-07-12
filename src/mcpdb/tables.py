@@ -440,7 +440,7 @@ class ProviderContent(Base):
 class SentimentType(Base):
     __tablename__ = "sentiment_type"
     __table_args__ = {
-        "comment": "The type of sentiment, e.g. positive, negative, neutral, etc."
+        "comment": "The type of sentiment in terms of the calculation method, e.g. PROVIDER, NLTK, VADER, etc. This is meant to store the sentiment type that is used to calculate the sentiment of a provider content."
     }
 
     id: Mapped[int] = mapped_column(
