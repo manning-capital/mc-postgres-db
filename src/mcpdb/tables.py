@@ -18,16 +18,30 @@ class Base(DeclarativeBase):
 
 class AssetType(Base):
     __tablename__ = "asset_type"
+    __table_args__ = {"comment": "The type of asset, e.g. stock, bond, currency, etc."}
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    is_active: Mapped[bool] = mapped_column(default=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the asset type"
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the asset type"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the asset type"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the asset type is active"
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset type",
     )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=False, server_onupdate=func.now(), server_default=func.now()
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the asset type",
     )
 
     def __repr__(self):
@@ -36,23 +50,43 @@ class AssetType(Base):
 
 class Asset(Base):
     __tablename__ = "asset"
+    __table_args__ = {"comment": "The asset, e.g. stock, bond, currency, etc."}
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the asset"
+    )
     asset_type_id: Mapped[int] = mapped_column(
-        ForeignKey("asset_type.id"), nullable=False
+        ForeignKey("asset_type.id"),
+        nullable=False,
+        comment="The identifier of the asset type",
     )
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]]
-    symbol: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the asset"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the asset"
+    )
+    symbol: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, comment="The symbol of the asset"
+    )
     underlying_asset_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("asset.id"), nullable=True
+        ForeignKey("asset.id"),
+        nullable=True,
+        comment="The identifier of the underlying asset",
     )
-    is_active: Mapped[bool] = mapped_column(default=True)
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the asset is active"
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset",
     )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=False, server_onupdate=func.now(), server_default=func.now()
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the asset",
     )
 
     def __repr__(self):
@@ -61,16 +95,30 @@ class Asset(Base):
 
 class ProviderType(Base):
     __tablename__ = "provider_type"
+    __table_args__ = {"comment": "The type of provider, e.g. news, social media, etc."}
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    is_active: Mapped[bool] = mapped_column(default=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the provider type"
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the provider type"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the provider type"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the provider type is active"
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the provider type",
     )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=False, server_onupdate=func.now(), server_default=func.now()
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the provider type",
     )
 
     def __repr__(self):
@@ -79,23 +127,51 @@ class ProviderType(Base):
 
 class Provider(Base):
     __tablename__ = "provider"
+    __table_args__ = {
+        "comment": "The provider, e.g. data vendor, news, social media, etc."
+    }
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the provider"
+    )
     provider_type_id: Mapped[int] = mapped_column(
-        ForeignKey("provider_type.id"), nullable=False
+        ForeignKey("provider_type.id"),
+        nullable=False,
+        comment="The identifier of the provider type",
     )
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    symbol: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the provider"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the provider"
+    )
+    provider_external_code: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, comment="The external code of the provider"
+    )
     underlying_provider_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("provider.id"), nullable=True
+        ForeignKey("provider.id"),
+        nullable=True,
+        comment="The identifier of the underlying provider",
     )
-    is_active: Mapped[bool] = mapped_column(default=True)
+    url: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The URL of the provider"
+    )
+    image_url: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The URL of the provider's image"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the provider is active"
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the provider",
     )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=False, server_onupdate=func.now(), server_default=func.now()
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the provider",
     )
 
     def __repr__(self):
@@ -147,21 +223,41 @@ class Provider(Base):
 
 class ProviderAsset(Base):
     __tablename__ = "provider_asset"
+    __table_args__ = {
+        "comment": "The provider asset, is meant to map our internal definitions to the provider's definitions."
+    }
 
-    date: Mapped[datetime.date] = mapped_column(primary_key=True)
+    date: Mapped[datetime.date] = mapped_column(
+        primary_key=True, comment="The date of the provider asset"
+    )
     provider_id: Mapped[int] = mapped_column(
-        ForeignKey("provider.id"), nullable=False, primary_key=True
+        ForeignKey("provider.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the provider",
     )
     asset_id: Mapped[int] = mapped_column(
-        ForeignKey("asset.id"), nullable=False, primary_key=True
+        ForeignKey("asset.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the asset",
     )
-    asset_code: Mapped[str] = mapped_column(String(100), nullable=False)
-    is_active: Mapped[bool] = mapped_column(default=True)
+    asset_code: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The code of the asset"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the provider asset is active"
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the provider asset",
     )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=False, server_onupdate=func.now(), server_default=func.now()
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the provider asset",
     )
 
     def __repr__(self):
@@ -170,14 +266,35 @@ class ProviderAsset(Base):
 
 class ProviderAssetOrder(Base):
     __tablename__ = "provider_asset_order"
+    __table_args__ = {
+        "comment": "The provider asset order, will store order data for an asset from a provider."
+    }
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    timestamp: Mapped[datetime.datetime] = mapped_column(nullable=False)
-    provider_id: Mapped[int] = mapped_column(ForeignKey("provider.id"), nullable=False)
-    from_asset_id: Mapped[int] = mapped_column(ForeignKey("asset.id"), nullable=False)
-    to_asset_id: Mapped[int] = mapped_column(ForeignKey("asset.id"), nullable=False)
-    price: Mapped[float] = mapped_column(nullable=True)
-    volume: Mapped[float] = mapped_column(nullable=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the provider asset order"
+    )
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        nullable=False, comment="The timestamp of the provider asset order"
+    )
+    provider_id: Mapped[int] = mapped_column(
+        ForeignKey("provider.id"),
+        nullable=False,
+        comment="The identifier of the provider",
+    )
+    from_asset_id: Mapped[int] = mapped_column(
+        ForeignKey("asset.id"),
+        nullable=False,
+        comment="The identifier of the from asset",
+    )
+    to_asset_id: Mapped[int] = mapped_column(
+        ForeignKey("asset.id"), nullable=False, comment="The identifier of the to asset"
+    )
+    price: Mapped[float] = mapped_column(
+        nullable=True, comment="The price of the provider asset order"
+    )
+    volume: Mapped[float] = mapped_column(
+        nullable=True, comment="The volume of the provider asset order"
+    )
 
     def __repr__(self):
         return f"{ProviderAssetOrder.__name__}(id={self.id}, timestamp={self.timestamp}, provider_id={self.provider_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id}, price={self.price}, volume={self.volume})"
@@ -185,23 +302,48 @@ class ProviderAssetOrder(Base):
 
 class ProviderAssetMarket(Base):
     __tablename__ = "provider_asset_market"
+    __table_args__ = {
+        "comment": "The provider asset market, will store market data for an asset from a provider."
+    }
 
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, primary_key=True
+        nullable=False,
+        primary_key=True,
+        comment="The timestamp of the provider asset market",
     )
     provider_id: Mapped[int] = mapped_column(
-        ForeignKey("provider.id"), nullable=False, primary_key=True
+        ForeignKey("provider.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the provider",
     )
     asset_id: Mapped[int] = mapped_column(
-        ForeignKey("asset.id"), nullable=False, primary_key=True
+        ForeignKey("asset.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the asset",
     )
-    close: Mapped[float] = mapped_column(nullable=True, comment="Closing price")
-    open: Mapped[float] = mapped_column(nullable=True, comment="Opening price")
-    high: Mapped[float] = mapped_column(nullable=True, comment="Highest price")
-    low: Mapped[float] = mapped_column(nullable=True, comment="Lowest price")
-    volume: Mapped[float] = mapped_column(nullable=True, comment="Volume traded")
-    best_bid: Mapped[float] = mapped_column(nullable=True, comment="Best bid price")
-    best_ask: Mapped[float] = mapped_column(nullable=True, comment="Best ask price")
+    close: Mapped[float] = mapped_column(
+        nullable=True, comment="The closing price of the provider asset market"
+    )
+    open: Mapped[float] = mapped_column(
+        nullable=True, comment="The opening price of the provider asset market"
+    )
+    high: Mapped[float] = mapped_column(
+        nullable=True, comment="The highest price of the provider asset market"
+    )
+    low: Mapped[float] = mapped_column(
+        nullable=True, comment="The lowest price of the provider asset market"
+    )
+    volume: Mapped[float] = mapped_column(
+        nullable=True, comment="The volume traded of the provider asset market"
+    )
+    best_bid: Mapped[float] = mapped_column(
+        nullable=True, comment="The best bid price of the provider asset market"
+    )
+    best_ask: Mapped[float] = mapped_column(
+        nullable=True, comment="The best ask price of the provider asset market"
+    )
 
     def __repr__(self):
         return f"{ProviderAssetMarket.__name__}(id={self.id}, provider_id={self.provider_id}, asset_id={self.asset_id}, market_type={self.market_type})"
@@ -209,16 +351,30 @@ class ProviderAssetMarket(Base):
 
 class ContentType(Base):
     __tablename__ = "content_type"
+    __table_args__ = {"comment": "The type of content, e.g. news, social media, etc."}
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    is_active: Mapped[bool] = mapped_column(default=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the content type"
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the content type"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the content type"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the content type is active"
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the content type",
     )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=False, server_onupdate=func.now(), server_default=func.now()
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the content type",
     )
 
     def __repr__(self):
@@ -227,29 +383,55 @@ class ContentType(Base):
 
 class ProviderContent(Base):
     __tablename__ = "provider_content"
+    __table_args__ = {
+        "comment": "The provider content, will store content data for a provider."
+    }
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    timestamp: Mapped[datetime.datetime] = mapped_column(nullable=False)
-    provider_id: Mapped[int] = mapped_column(ForeignKey("provider.id"), nullable=False)
-    provider_external_code: Mapped[str] = mapped_column(
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the provider content"
+    )
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        nullable=False, comment="The timestamp of the provider content"
+    )
+    provider_id: Mapped[int] = mapped_column(
+        ForeignKey("provider.id"),
+        nullable=False,
+        comment="The identifier of the provider",
+    )
+    content_external_code: Mapped[str] = mapped_column(
         String(1000),
         nullable=False,
         comment="This is the external identifier for the content and will depend on the content provider and the type of content. For example, for a news article, it could be the URL of the article and for a social media post, it could be the post ID.",
     )
     content_type_id: Mapped[int] = mapped_column(
-        ForeignKey("content_type.id"), nullable=False
+        ForeignKey("content_type.id"),
+        nullable=False,
+        comment="The identifier of the content type",
     )
-    authors: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    title: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    authors: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The authors of the provider content"
+    )
+    title: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The title of the provider content"
+    )
     description: Mapped[Optional[str]] = mapped_column(
-        String(5000), nullable=True, comment="A short description of the content"
+        String(5000),
+        nullable=True,
+        comment="A short description of the provider content",
     )
-    content: Mapped[str] = mapped_column(String(), nullable=False)
+    content: Mapped[str] = mapped_column(
+        String(), nullable=False, comment="The content of the provider content"
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the provider content",
     )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=False, server_onupdate=func.now(), server_default=func.now()
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the provider content",
     )
 
     def __repr__(self):
@@ -258,13 +440,24 @@ class ProviderContent(Base):
 
 class AssetContent(Base):
     __tablename__ = "asset_content"
+    __table_args__ = {
+        "comment": "The asset content, will store the relationship between an asset and a provider content."
+    }
 
     content_id: Mapped[int] = mapped_column(
-        ForeignKey("provider_content.id"), primary_key=True, nullable=False
+        ForeignKey("provider_content.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the provider content",
     )
     asset_id: Mapped[int] = mapped_column(
-        ForeignKey("asset.id"), primary_key=True, nullable=False
+        ForeignKey("asset.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the asset",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset content",
     )
