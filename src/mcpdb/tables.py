@@ -146,7 +146,9 @@ class Provider(Base):
         String(1000), nullable=True, comment="The description of the provider"
     )
     provider_external_code: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, comment="The external code of the provider, this is used to identify the provider in the provider's system. For example, for a news provider, it could be the name of the provider or an internal ID."
+        String(100),
+        nullable=True,
+        comment="The external code of the provider, this is used to identify the provider in the provider's system. For example, for a news provider, it could be the name of the provider or an internal ID.",
     )
     underlying_provider_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("provider.id"),
@@ -243,7 +245,9 @@ class ProviderAsset(Base):
         comment="The identifier of the asset",
     )
     asset_code: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="The code of the asset, this is used to identify the asset in the provider's system. For example, for a stock, it could be the ticker symbol or an internal ID."
+        String(100),
+        nullable=False,
+        comment="The code of the asset, this is used to identify the asset in the provider's system. For example, for a stock, it could be the ticker symbol or an internal ID.",
     )
     is_active: Mapped[bool] = mapped_column(
         default=True, comment="Whether the provider asset is active"
@@ -437,6 +441,7 @@ class ProviderContent(Base):
     def __repr__(self):
         return f"{ProviderContent.__name__}(id={self.id}, provider_id={self.provider_id}, content_type_id={self.content_type_id}, content_external_code={self.content_external_code})"
 
+
 class SentimentType(Base):
     __tablename__ = "sentiment_type"
     __table_args__ = {
@@ -490,19 +495,25 @@ class ProviderContentSentiment(Base):
         comment="The identifier of the sentiment type",
     )
     sentiment_text: Mapped[Optional[str]] = mapped_column(
-        String(1000), nullable=True, comment="The sentiment score text of the content that is internally calculated, this is a text that describes the sentiment score."
+        String(1000),
+        nullable=True,
+        comment="The sentiment score text of the content that is internally calculated, this is a text that describes the sentiment score.",
     )
     positive_sentiment_score: Mapped[Optional[float]] = mapped_column(
-        nullable=True, comment="The positive sentiment score of the content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+        nullable=True,
+        comment="The positive sentiment score of the content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment.",
     )
     negative_sentiment_score: Mapped[Optional[float]] = mapped_column(
-        nullable=True, comment="The negative sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+        nullable=True,
+        comment="The negative sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment.",
     )
     neutral_sentiment_score: Mapped[Optional[float]] = mapped_column(
-        nullable=True, comment="The neutral sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+        nullable=True,
+        comment="The neutral sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment.",
     )
     sentiment_score: Mapped[Optional[float]] = mapped_column(
-        nullable=True, comment="The sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment."
+        nullable=True,
+        comment="The sentiment score of the provider content that is internally calculated, this is a normalized score between 0 and 1, where 0 is the lowest sentiment and 1 is the highest sentiment.",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
