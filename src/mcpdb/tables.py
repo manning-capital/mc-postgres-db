@@ -243,7 +243,7 @@ class ProviderAsset(Base):
         comment="The identifier of the asset",
     )
     asset_code: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="The code of the asset"
+        String(100), nullable=False, comment="The code of the asset, this is used to identify the asset in the provider's system. For example, for a stock, it could be the ticker symbol or an internal ID."
     )
     is_active: Mapped[bool] = mapped_column(
         default=True, comment="Whether the provider asset is active"
