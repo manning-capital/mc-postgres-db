@@ -9,6 +9,7 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
+
 def clear_database(engine: Engine):
     """
     Clear the database of all data.

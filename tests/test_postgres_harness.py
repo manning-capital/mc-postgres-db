@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from mc_postgres_db.prefect.tasks import get_engine, set_data
 from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
-from sqlalchemy import Engine, select, delete
+from sqlalchemy import Engine, select
 from mc_postgres_db.testing.utilities import postgres_test_harness, clear_database
 
 
