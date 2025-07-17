@@ -10,11 +10,11 @@ from sqlalchemy.orm import Session
 from mc_postgres_db.prefect.tasks import get_engine, set_data
 from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
-from sqlalchemy import Engine, select
-from mc_postgres_db.testing.utilities import postgres_test_harness
+from sqlalchemy import Engine, select, delete
+from mc_postgres_db.testing.utilities import postgres_test_harness, clear_database
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def postgres_harness():
     with postgres_test_harness(prefect_server_startup_timeout=45):
         yield
@@ -66,6 +66,10 @@ def test_create_an_asset_type_model():
 
     # Create a new asset type in a session.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
+        # Create a new asset type.
         asset_type = AssetType(
             name="Test Asset Type",
             description="Test Asset Type Description",
@@ -93,6 +97,10 @@ def test_create_an_asset_model():
 
     # Create a new asset type.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
+        # Create a new asset type.
         asset_type = AssetType(
             name="Test Asset Type",
             description="Test Asset Type Description",
@@ -100,14 +108,12 @@ def test_create_an_asset_model():
         session.add(asset_type)
         session.commit()
 
-    # Get the asset type id.
-    with Session(engine) as session:
+        # Get the asset type id.
         stmt = select(AssetType)
         asset_type_result = session.execute(stmt).scalar_one()
         asset_type_id = asset_type_result.id
 
-    # Create a new asset.
-    with Session(engine) as session:
+        # Create a new asset.
         asset = Asset(
             asset_type_id=asset_type_id,
             name="Test Asset",
@@ -118,8 +124,7 @@ def test_create_an_asset_model():
         session.add(asset)
         session.commit()
 
-    # Query the asset.
-    with Session(engine) as session:
+        # Query the asset.
         stmt = select(Asset)
         asset_result = session.execute(stmt).scalar_one()
         assert asset_result.id is not None
@@ -144,6 +149,9 @@ def test_use_set_data_upsert_to_add_provider_market_data():
 
     # Create a new asset type.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
         # Create a new asset type.
         asset_type = AssetType(
             name="CryptoCurrency",
@@ -252,6 +260,9 @@ def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns
 
     # Create a new asset type.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
         # Create a new asset type.
         asset_type = AssetType(
             name="CryptoCurrency",
@@ -355,6 +366,9 @@ def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_comp
 
     # Create a new asset type.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
         # Create a new asset type.
         asset_type = AssetType(
             name="CryptoCurrency",
@@ -479,6 +493,9 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
 
     # Create a new asset type.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
         # Create a new asset type.
         asset_type = AssetType(
             name="CryptoCurrency",
@@ -602,6 +619,9 @@ def test_use_set_data_append_to_add_provider_market_data():
 
     # Create a new asset type.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
         # Create a new asset type.
         asset_type = AssetType(
             name="CryptoCurrency",
@@ -732,6 +752,9 @@ async def test_use_async_set_data_append_to_add_provider_market_data():
 
     # Create a new asset type.
     with Session(engine) as session:
+        # Clear the database.
+        clear_database(engine)
+
         # Create a new asset type.
         asset_type = AssetType(
             name="CryptoCurrency",

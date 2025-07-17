@@ -1,13 +1,20 @@
 import os
 import tempfile
 import mc_postgres_db.models as models
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Engine
 from contextlib import contextmanager
 from prefect.blocks.system import Secret
 from prefect.testing.utilities import prefect_test_harness
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
+def clear_database(engine: Engine):
+    """
+    Clear the database of all data.
+    """
+    models.Base.metadata.drop_all(engine)
+    models.Base.metadata.create_all(engine)
 
 
 @contextmanager
