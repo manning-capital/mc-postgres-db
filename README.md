@@ -122,8 +122,8 @@ uv sync --dev
 uv run pytest
 
 # Run linting
-uv run ruff check src/mcpdb/
-uv run ruff format src/mcpdb/
+uv run ruff check
+uv run ruff format
 ```
 
 ### Database Migrations
@@ -143,14 +143,25 @@ uv run alembic downgrade -1
 
 ```
 mc-postgres-db/
-├── src/                 # Source code directory
-│   └── mcpdb/           # Package directory
-│       └── tables.py    # SQLAlchemy ORM models
-├── tests/               # Unit and integration tests
-├── scripts/             # Database maintenance scripts
-├── pyproject.toml       # Project configuration and dependencies
-├── uv.lock             # Locked dependency versions
-└── README.md           # Project documentation
+├── src/                       # Source code directory
+│   └── mc_postgres_db/        # Main package directory
+│       ├── __init__.py
+│       ├── models.py
+│       ├── operations.py
+│       ├── prefect/
+│       │   ├── __init__.py
+│       │   ├── tasks.py
+│       │   └── asyncio/
+│       │       ├── __init__.py
+│       │       └── tasks.py
+│       └── testing/
+│           ├── __init__.py
+│           └── utilities.py
+├── tests/                    # Unit and integration tests
+├── alembic/                  # Database migrations
+├── pyproject.toml            # Project configuration and dependencies
+├── uv.lock                   # Locked dependency versions
+└── README.md                 # Project documentation
 ```
 
 ## Data Sources
@@ -175,6 +186,58 @@ This database integrates with various financial data providers:
 - Partitioned tables for large time-series data
 - Connection pooling for high-throughput operations
 - Caching layer for frequently accessed data
+
+## Testing Utilties
+
+This package provides a robust testing harness for database-related tests, allowing you to run your tests against a temporary SQLite database that mirrors your PostgreSQL schema. This is especially useful for testing Prefect flows and tasks that interact with the database, without requiring a live PostgreSQL instance or extensive mocking.
+
+### `postgres_test_harness`
+
+The `postgres_test_harness` context manager (found in `mc_postgres_db.testing.utilities`) creates a temporary SQLite database file, initializes all ORM models, and **patches the Prefect tasks used to obtain the SQLAlchemy engine** (both sync and async) so that all database operations in your flows and tasks are transparently redirected to this SQLite database.
+
+**Key benefits:**
+- No need to change or mock every Prefect flow or task that uses the database engine.
+- All Prefect tasks that call `get_engine` (sync or async) will automatically use the temporary SQLite database.
+- The database is created fresh for each test session or function (depending on fixture scope), ensuring isolation and repeatability.
+- At the end of the test, the database and all tables are cleaned up.
+
+### Usage with Pytest
+
+You can use the harness as a fixture in your tests. For example:
+
+```python
+import pytest
+from mc_postgres_db.testing.utilities import postgres_test_harness
+
+@pytest.fixture(scope="function", autouse=True)
+def postgres_harness():
+    with postgres_test_harness():
+        yield
+
+def test_my_flow():
+    # Any Prefect task that calls get_engine() will use the SQLite test DB
+    ...
+```
+
+If you are also testing Prefect flows, you can combine this with the `prefect_test_harness` from `prefect.testing.utilities` to patch Prefect's runtime environment as well:
+
+```python
+import pytest
+from prefect.testing.utilities import prefect_test_harness
+from mc_postgres_db.testing.utilities import postgres_test_harness
+
+@pytest.fixture(scope="session", autouse=True)
+def prefect_harness():
+    with prefect_test_harness():
+        yield
+
+@pytest.fixture(scope="function", autouse=True)
+def postgres_harness():
+    with postgres_test_harness():
+        yield
+```
+
+Now, all your tests (including those that run Prefect flows) will use the temporary SQLite database, and you don't need to modify your flows or tasks to support testing.
 
 ## Contributing
 

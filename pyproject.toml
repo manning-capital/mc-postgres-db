@@ -21,3 +21,10 @@ test = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
 ]
+[tool.poetry]
+packages = [
+    { include = "mc_postgres_db" },
+    { include = "mc_postgres_db/prefect" },
+    { include = "mc_postgres_db/prefect/asyncio" },
+    { include = "mc_postgres_db/testing" }
+]
