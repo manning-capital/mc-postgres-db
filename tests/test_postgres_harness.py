@@ -15,7 +15,6 @@ from mc_postgres_db.testing.utilities import postgres_test_harness
 from prefect.testing.utilities import prefect_test_harness
 
 
-
 @pytest.fixture(scope="session", autouse=True)
 def prefect_harness():
     with prefect_test_harness():

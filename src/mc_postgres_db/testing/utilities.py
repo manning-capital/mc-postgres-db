@@ -1,10 +1,8 @@
 import os
 import tempfile
 import mc_postgres_db.models as models
-from prefect import task
-from sqlalchemy import create_engine, Engine
+from sqlalchemy import create_engine
 from contextlib import contextmanager
-from unittest.mock import patch
 from prefect.blocks.system import Secret
 import logging
 
@@ -25,7 +23,7 @@ def postgres_test_harness():
     # Get the engine.
     LOGGER.info("Getting engine for the SQLite database...")
     url = f"sqlite:///{db_path}"
-    engine  = create_engine(url)
+    engine = create_engine(url)
 
     # Create all models in the database.
     LOGGER.info("Creating all tables in the SQLite database...")
