@@ -1,6 +1,6 @@
 [project]
 name = "mc-postgres-db"
-version = "1.0.10"
+version = "1.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -9,7 +9,6 @@ dependencies = [
     "pandas>=2.3.1",
     "prefect>=3.4.8",
     "psycopg2-binary>=2.9.10",
-    "pytest>=8.4.1",
     "ruff>=0.12.0",
     "sqlalchemy>=2.0.41",
 ]
@@ -20,4 +19,5 @@ dev = [
 ]
 test = [
     "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
 ]
