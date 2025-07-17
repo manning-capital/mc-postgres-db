@@ -12,18 +12,11 @@ from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
 from sqlalchemy import Engine, select
 from mc_postgres_db.testing.utilities import postgres_test_harness
-from prefect.testing.utilities import prefect_test_harness
-
-
-@pytest.fixture(scope="session", autouse=True)
-def prefect_harness():
-    with prefect_test_harness():
-        yield
 
 
 @pytest.fixture(scope="function", autouse=True)
 def postgres_harness():
-    with postgres_test_harness():
+    with postgres_test_harness(prefect_server_startup_timeout=45):
         yield
 
 

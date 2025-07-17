@@ -4,13 +4,14 @@ import mc_postgres_db.models as models
 from sqlalchemy import create_engine
 from contextlib import contextmanager
 from prefect.blocks.system import Secret
+from prefect.testing.utilities import prefect_test_harness
 import logging
 
 LOGGER = logging.getLogger(__name__)
 
 
 @contextmanager
-def postgres_test_harness():
+def postgres_test_harness(prefect_server_startup_timeout: int = 30):
     """
     A test harness for testing the PostgreSQL database.
     """
@@ -29,10 +30,12 @@ def postgres_test_harness():
     LOGGER.info("Creating all tables in the SQLite database...")
     models.Base.metadata.create_all(engine)
 
-    # Set the postgres-url secret to the URL of the SQLite database.
-    Secret(value=url).save("postgres-url", overwrite=True)  # type: ignore
+    # Initialize the Prefect test harness as well to ensure that we have the proper environment setup.
+    with prefect_test_harness(server_startup_timeout=prefect_server_startup_timeout):
+        # Set the postgres-url secret to the URL of the SQLite database.
+        Secret(value=url).save("postgres-url")  # type: ignore
 
-    yield
+        yield
 
     # Clean-up the database.
     LOGGER.info("Dropping all tables...")
