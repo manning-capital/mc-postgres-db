@@ -73,4 +73,4 @@ def postgres_test_harness():
     # Delete the database file.
     LOGGER.info("Deleting temporary SQLite database file...")
     if os.path.exists(db_path):
-        os.remove(db_path)    
+        os.remove(db_path)
