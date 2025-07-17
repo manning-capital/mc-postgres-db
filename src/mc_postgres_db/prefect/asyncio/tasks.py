@@ -12,19 +12,8 @@ async def get_engine() -> Engine:
     """
     Get the PostgreSQL engine from the connection string.
     """
-    postgresql_password: str = (await Secret.load("postgres-password")).get()  # type: ignore
-    host = (await Secret.load("postgres-host")).get()  # type: ignore
-    port = (await Secret.load("postgres-port")).get()  # type: ignore
-    database = (await Secret.load("postgres-database")).get()  # type: ignore
-    user = (await Secret.load("postgres-user")).get()  # type: ignore
-    url = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
-        user=user,
-        password=postgresql_password,
-        host=host,
-        port=port,
-        database=database,
-    )
-    return create_engine(url)
+    postgres_url = (await Secret.load("postgres-url")).get()  # type: ignore
+    return create_engine(postgres_url)
 
 
 @task()

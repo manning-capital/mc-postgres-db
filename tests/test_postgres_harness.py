@@ -6,10 +6,13 @@ import datetime as dt
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
 
 import pytest
+from sqlalchemy.orm import Session
+from mc_postgres_db.prefect.tasks import get_engine, set_data
+from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
+from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
+from sqlalchemy import Engine, select
 from mc_postgres_db.testing.utilities import postgres_test_harness
 from prefect.testing.utilities import prefect_test_harness
-from sqlalchemy import Engine, select
-from sqlalchemy.orm import Session
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -25,8 +28,6 @@ def postgres_harness():
 
 
 def test_engine_is_mocked():
-    from mc_postgres_db.prefect.tasks import get_engine
-
     engine = get_engine()
     assert isinstance(engine, Engine)
     assert engine.url.database is not None
@@ -40,9 +41,7 @@ def test_engine_is_mocked():
 
 @pytest.mark.asyncio
 async def test_engine_is_mocked_async():
-    from mc_postgres_db.prefect.asyncio.tasks import get_engine
-
-    engine = await get_engine()
+    engine = await get_engine_async()
     assert isinstance(engine, Engine)
     assert engine.url.database is not None
     assert engine.url.database.endswith(".db")
@@ -55,7 +54,6 @@ async def test_engine_is_mocked_async():
 
 def test_all_models_are_created():
     from mc_postgres_db.models import Base
-    from mc_postgres_db.prefect.tasks import get_engine
 
     # Get the engine.
     engine = get_engine()
@@ -69,7 +67,6 @@ def test_all_models_are_created():
 
 def test_create_an_asset_type_model():
     from mc_postgres_db.models import AssetType
-    from mc_postgres_db.prefect.tasks import get_engine
 
     # Get the engine.
     engine = get_engine()
@@ -97,7 +94,6 @@ def test_create_an_asset_type_model():
 
 def test_create_an_asset_model():
     from mc_postgres_db.models import Asset, AssetType
-    from mc_postgres_db.prefect.tasks import get_engine
 
     # Get the engine.
     engine = get_engine()
@@ -149,7 +145,6 @@ def test_use_set_data_upsert_to_add_provider_market_data():
         Provider,
         ProviderAssetMarket,
     )
-    from mc_postgres_db.prefect.tasks import get_engine, set_data
 
     # Get the engine.
     engine = get_engine()
@@ -258,7 +253,6 @@ def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns
         Provider,
         ProviderAssetMarket,
     )
-    from mc_postgres_db.prefect.tasks import get_engine, set_data
 
     # Get the engine.
     engine = get_engine()
@@ -362,7 +356,6 @@ def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_comp
         Provider,
         ProviderAssetMarket,
     )
-    from mc_postgres_db.prefect.tasks import get_engine, set_data
 
     # Get the engine.
     engine = get_engine()
@@ -487,10 +480,9 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
         Provider,
         ProviderAssetMarket,
     )
-    from mc_postgres_db.prefect.asyncio.tasks import get_engine, set_data
 
     # Get the engine.
-    engine = await get_engine()
+    engine = await get_engine_async()
 
     # Create a new asset type.
     with Session(engine) as session:
@@ -552,7 +544,7 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
 
         # Add market data using the set data.
         timestamp = dt.datetime.now()
-        await set_data(
+        await set_data_async(
             ProviderAssetMarket.__tablename__,
             pd.DataFrame(
                 [
@@ -572,7 +564,7 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
         )
 
         # Add the market data again using set data without close. We expect that the close will not be null.
-        await set_data(
+        await set_data_async(
             ProviderAssetMarket.__tablename__,
             pd.DataFrame(
                 [
@@ -611,7 +603,6 @@ def test_use_set_data_append_to_add_provider_market_data():
         Provider,
         ProviderAssetOrder,
     )
-    from mc_postgres_db.prefect.tasks import get_engine, set_data
 
     # Get the engine.
     engine = get_engine()
@@ -742,10 +733,9 @@ async def test_use_async_set_data_append_to_add_provider_market_data():
         Provider,
         ProviderAssetOrder,
     )
-    from mc_postgres_db.prefect.asyncio.tasks import get_engine, set_data
 
     # Get the engine.
-    engine = await get_engine()
+    engine = await get_engine_async()
 
     # Create a new asset type.
     with Session(engine) as session:
@@ -832,14 +822,14 @@ async def test_use_async_set_data_append_to_add_provider_market_data():
         )
 
         # Add the order data using set data.
-        await set_data(
+        await set_data_async(
             ProviderAssetOrder.__tablename__,
             fake_data,
             operation_type="append",
         )
 
         # Add the order data again using set data.
-        await set_data(
+        await set_data_async(
             ProviderAssetOrder.__tablename__,
             fake_data,
             operation_type="append",
