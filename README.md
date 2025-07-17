@@ -225,7 +225,7 @@ If you are also testing Prefect flows, the postgres harness will already use Pre
 import pytest
 from mc_postgres_db.testing.utilities import postgres_test_harness
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def postgres_harness():
     with postgres_test_harness(prefect_server_startup_timeout=45):
         yield
