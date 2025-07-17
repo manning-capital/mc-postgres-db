@@ -24,7 +24,7 @@ def postgres_test_harness():
     """
     # Create a temporary file for the SQLite database.
     LOGGER.info("Creating temporary SQLite database file...")
-    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    tmp = tempfile.NamedTemporaryFile(suffix=".db")
     db_path = tmp.name
     LOGGER.info(f"Temporary SQLite database file: {db_path}")
 
