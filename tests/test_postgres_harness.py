@@ -12,6 +12,7 @@ from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
 from sqlalchemy import Engine, select
 from mc_postgres_db.testing.utilities import postgres_test_harness, clear_database
+from mc_postgres_db.models import Base
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -45,8 +46,15 @@ async def test_engine_is_mocked_async():
     assert engine.url.port is None
 
 
+@pytest.mark.asyncio
+async def test_primary_key_constraint_name_is_correct():
+    engine = await get_engine_async()
+    assert engine.dialect.name == "sqlite"
+    for table in Base.metadata.tables.values():
+        assert table.primary_key.name == f"{table.name}_pkey"
+
+
 def test_all_models_are_created():
-    from mc_postgres_db.models import Base
 
     # Get the engine.
     engine = get_engine()
