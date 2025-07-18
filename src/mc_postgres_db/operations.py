@@ -12,10 +12,18 @@ def __upsert(table: pd.DataFrame, conn: Connection, keys, data_iter):
     """
     data = [dict(zip(keys, row)) for row in data_iter]
     insert_statement = insert(table.table).values(data)
-    upsert_statement = insert_statement.on_conflict_do_update(
-        constraint=f"PK_{table.table.name}",
-        set_={c.key: c for c in insert_statement.excluded},
-    )
+    if conn.dialect.name == "postgresql":
+        upsert_statement = insert_statement.on_conflict_do_update(
+            constraint=f"{table.table.name}_pkey",
+            set_={c.key: c for c in insert_statement.excluded},
+        )
+    elif conn.dialect.name == "sqlite":
+        upsert_statement = insert_statement.on_conflict_do_update(
+            constraint=f"PK_{table.table.name}",
+            set_={c.key: c for c in insert_statement.excluded},
+        )
+    else:
+        raise ValueError(f"Unsupported dialect: {conn.dialect.name}")
     result = conn.execute(upsert_statement)
     return result
 
