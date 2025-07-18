@@ -55,7 +55,6 @@ async def test_primary_key_constraint_name_is_correct():
 
 
 def test_all_models_are_created():
-
     # Get the engine.
     engine = get_engine()
 

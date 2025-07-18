@@ -13,6 +13,7 @@ class Base(DeclarativeBase):
     It inherits from DeclarativeBase, which is a SQLAlchemy class that provides
     a declarative interface for defining models.
     """
+
     # Define the metadata for the models. This is used to define the primary key constraint name.
     metadata = MetaData(
         naming_convention={
