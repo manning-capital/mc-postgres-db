@@ -1,5 +1,6 @@
 import datetime
 from typing import Optional
+from sqlalchemy import MetaData
 
 from sqlalchemy import Engine, ForeignKey, String, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
@@ -13,7 +14,12 @@ class Base(DeclarativeBase):
     a declarative interface for defining models.
     """
 
-    pass
+    # Define the metadata for the models. This is used to define the primary key constraint name.
+    metadata = MetaData(
+        naming_convention={
+            "pk": "%(table_name)s_pkey",
+        }
+    )
 
 
 class AssetType(Base):
