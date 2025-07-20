@@ -12,9 +12,19 @@ from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
 from sqlalchemy import Engine, select
 from mc_postgres_db.testing.utilities import postgres_test_harness, clear_database
-from mc_postgres_db.models import Base, AssetType, Asset, ProviderType, Provider, ProviderAssetMarket
+from mc_postgres_db.models import (
+    Base,
+    AssetType,
+    Asset,
+    ProviderType,
+    Provider,
+    ProviderAssetMarket,
+)
 
-def create_base_data(engine: Engine) -> tuple[AssetType, Asset, Asset, ProviderType, Provider]:
+
+def create_base_data(
+    engine: Engine,
+) -> tuple[AssetType, Asset, Asset, ProviderType, Provider]:
     # Create a new asset type.
     with Session(engine) as session:
         # Clear the database.
@@ -28,7 +38,7 @@ def create_base_data(engine: Engine) -> tuple[AssetType, Asset, Asset, ProviderT
         session.add(asset_type)
         session.commit()
         session.refresh(asset_type)
-    
+
     with Session(engine) as session:
         # Create a from asset.
         from_asset = Asset(
@@ -54,7 +64,7 @@ def create_base_data(engine: Engine) -> tuple[AssetType, Asset, Asset, ProviderT
         session.add(to_asset)
         session.commit()
         session.refresh(to_asset)
-    
+
     with Session(engine) as session:
         # Create a new provider type.
         provider_type = ProviderType(
@@ -64,7 +74,7 @@ def create_base_data(engine: Engine) -> tuple[AssetType, Asset, Asset, ProviderT
         session.add(provider_type)
         session.commit()
         session.refresh(provider_type)
-    
+
     with Session(engine) as session:
         # Create a new provider.
         provider = Provider(
@@ -77,6 +87,7 @@ def create_base_data(engine: Engine) -> tuple[AssetType, Asset, Asset, ProviderT
         session.refresh(provider)
 
     return asset_type, from_asset, to_asset, provider_type, provider
+
 
 @pytest.fixture(scope="session", autouse=True)
 def postgres_harness():
@@ -206,7 +217,6 @@ def test_create_an_asset_model():
 
 
 def test_use_set_data_upsert_to_add_provider_market_data():
-
     # Get the engine.
     engine = get_engine()
 
@@ -256,10 +266,6 @@ def test_use_set_data_upsert_to_add_provider_market_data():
 
 def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns():
     from mc_postgres_db.models import (
-        Asset,
-        AssetType,
-        ProviderType,
-        Provider,
         ProviderAssetMarket,
     )
 
@@ -270,7 +276,6 @@ def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns
     asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
 
     with Session(engine) as session:
-
         # Add the market data again using set data without close. We expect that the close will be null.
         timestamp = dt.datetime.now()
         set_data(
@@ -308,10 +313,6 @@ def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns
 
 def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_complete_columns():
     from mc_postgres_db.models import (
-        Asset,
-        AssetType,
-        ProviderType,
-        Provider,
         ProviderAssetMarket,
     )
 
@@ -381,10 +382,6 @@ def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_comp
 @pytest.mark.asyncio
 async def test_use_async_set_data_upsert_to_add_provider_market_data():
     from mc_postgres_db.models import (
-        Asset,
-        AssetType,
-        ProviderType,
-        Provider,
         ProviderAssetMarket,
     )
 
@@ -396,7 +393,6 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
 
     # Create a new asset type.
     with Session(engine) as session:
-
         # Add market data using the set data.
         timestamp = dt.datetime.now()
         await set_data_async(
@@ -455,10 +451,6 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
 
 def test_use_set_data_append_to_add_provider_market_data():
     from mc_postgres_db.models import (
-        Asset,
-        AssetType,
-        ProviderType,
-        Provider,
         ProviderAssetOrder,
     )
 
@@ -468,63 +460,57 @@ def test_use_set_data_append_to_add_provider_market_data():
     # Create the base data.
     asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
 
-    # Create a new asset type.
-    with Session(engine) as session:
-        # Generate fake data.
-        timestamp = dt.datetime.now()
-        fake_data = pd.DataFrame(
-            [
-                {
-                    "timestamp": timestamp,
-                    "provider_id": provider.id,
-                    "from_asset_id": from_asset.id,
-                    "to_asset_id": to_asset.id,
-                    "price": 10001,
-                    "volume": 10002,
-                }
-            ]
-        )
+    # Generate fake data.
+    timestamp = dt.datetime.now()
+    fake_data = pd.DataFrame(
+        [
+            {
+                "timestamp": timestamp,
+                "provider_id": provider.id,
+                "from_asset_id": from_asset.id,
+                "to_asset_id": to_asset.id,
+                "price": 10001,
+                "volume": 10002,
+            }
+        ]
+    )
 
-        # Add the order data using set data.
-        set_data(
-            ProviderAssetOrder.__tablename__,
-            fake_data,
-            operation_type="append",
-        )
+    # Add the order data using set data.
+    set_data(
+        ProviderAssetOrder.__tablename__,
+        fake_data,
+        operation_type="append",
+    )
 
-        # Add the order data again using set data.
-        set_data(
-            ProviderAssetOrder.__tablename__,
-            fake_data,
-            operation_type="append",
-        )
+    # Add the order data again using set data.
+    set_data(
+        ProviderAssetOrder.__tablename__,
+        fake_data,
+        operation_type="append",
+    )
 
-        # Check to see if the market data was added.
-        stmt = select(ProviderAssetOrder)
-        provider_asset_order_df = pd.read_sql(stmt, engine)
-        assert provider_asset_order_df.shape[0] == 2
-        assert provider_asset_order_df.iloc[0].timestamp == timestamp
-        assert provider_asset_order_df.iloc[0].provider_id == provider.id
-        assert provider_asset_order_df.iloc[0].from_asset_id == from_asset.id
-        assert provider_asset_order_df.iloc[0].to_asset_id == to_asset.id
-        assert provider_asset_order_df.iloc[0].price == 10001
-        assert provider_asset_order_df.iloc[0].volume == 10002
-        assert provider_asset_order_df.iloc[1].timestamp == timestamp
-        assert provider_asset_order_df.iloc[1].provider_id == provider.id
-        assert provider_asset_order_df.iloc[1].from_asset_id == from_asset.id
-        assert provider_asset_order_df.iloc[1].to_asset_id == to_asset.id
-        assert provider_asset_order_df.iloc[1].price == 10001
-        assert provider_asset_order_df.iloc[1].volume == 10002
-        assert provider_asset_order_df.iloc[0].id != provider_asset_order_df.iloc[1].id
+    # Check to see if the market data was added.
+    stmt = select(ProviderAssetOrder)
+    provider_asset_order_df = pd.read_sql(stmt, engine)
+    assert provider_asset_order_df.shape[0] == 2
+    assert provider_asset_order_df.iloc[0].timestamp == timestamp
+    assert provider_asset_order_df.iloc[0].provider_id == provider.id
+    assert provider_asset_order_df.iloc[0].from_asset_id == from_asset.id
+    assert provider_asset_order_df.iloc[0].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[0].price == 10001
+    assert provider_asset_order_df.iloc[0].volume == 10002
+    assert provider_asset_order_df.iloc[1].timestamp == timestamp
+    assert provider_asset_order_df.iloc[1].provider_id == provider.id
+    assert provider_asset_order_df.iloc[1].from_asset_id == from_asset.id
+    assert provider_asset_order_df.iloc[1].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[1].price == 10001
+    assert provider_asset_order_df.iloc[1].volume == 10002
+    assert provider_asset_order_df.iloc[0].id != provider_asset_order_df.iloc[1].id
 
 
 @pytest.mark.asyncio
 async def test_use_async_set_data_append_to_add_provider_market_data():
     from mc_postgres_db.models import (
-        Asset,
-        AssetType,
-        ProviderType,
-        Provider,
         ProviderAssetOrder,
     )
 
@@ -534,51 +520,49 @@ async def test_use_async_set_data_append_to_add_provider_market_data():
     # Create the base data.
     asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
 
-    # Create a new asset type.
-    with Session(engine) as session:
-        # Generate fake data.
-        timestamp = dt.datetime.now()
-        fake_data = pd.DataFrame(
-            [
-                {
-                    "timestamp": timestamp,
-                    "provider_id": provider.id,
-                    "from_asset_id": from_asset.id,
-                    "to_asset_id": to_asset.id,
-                    "price": 10001,
-                    "volume": 10002,
-                }
-            ]
-        )
+    # Generate fake data.
+    timestamp = dt.datetime.now()
+    fake_data = pd.DataFrame(
+        [
+            {
+                "timestamp": timestamp,
+                "provider_id": provider.id,
+                "from_asset_id": from_asset.id,
+                "to_asset_id": to_asset.id,
+                "price": 10001,
+                "volume": 10002,
+            }
+        ]
+    )
 
-        # Add the order data using set data.
-        await set_data_async(
-            ProviderAssetOrder.__tablename__,
-            fake_data,
-            operation_type="append",
-        )
+    # Add the order data using set data.
+    await set_data_async(
+        ProviderAssetOrder.__tablename__,
+        fake_data,
+        operation_type="append",
+    )
 
-        # Add the order data again using set data.
-        await set_data_async(
-            ProviderAssetOrder.__tablename__,
-            fake_data,
-            operation_type="append",
-        )
+    # Add the order data again using set data.
+    await set_data_async(
+        ProviderAssetOrder.__tablename__,
+        fake_data,
+        operation_type="append",
+    )
 
-        # Check to see if the market data was added.
-        stmt = select(ProviderAssetOrder)
-        provider_asset_order_df = pd.read_sql(stmt, engine)
-        assert provider_asset_order_df.shape[0] == 2
-        assert provider_asset_order_df.iloc[0].timestamp == timestamp
-        assert provider_asset_order_df.iloc[0].provider_id == provider.id
-        assert provider_asset_order_df.iloc[0].from_asset_id == from_asset.id
-        assert provider_asset_order_df.iloc[0].to_asset_id == to_asset.id
-        assert provider_asset_order_df.iloc[0].price == 10001
-        assert provider_asset_order_df.iloc[0].volume == 10002
-        assert provider_asset_order_df.iloc[1].timestamp == timestamp
-        assert provider_asset_order_df.iloc[1].provider_id == provider.id
-        assert provider_asset_order_df.iloc[1].from_asset_id == from_asset.id
-        assert provider_asset_order_df.iloc[1].to_asset_id == to_asset.id
-        assert provider_asset_order_df.iloc[1].price == 10001
-        assert provider_asset_order_df.iloc[1].volume == 10002
-        assert provider_asset_order_df.iloc[0].id != provider_asset_order_df.iloc[1].id
+    # Check to see if the market data was added.
+    stmt = select(ProviderAssetOrder)
+    provider_asset_order_df = pd.read_sql(stmt, engine)
+    assert provider_asset_order_df.shape[0] == 2
+    assert provider_asset_order_df.iloc[0].timestamp == timestamp
+    assert provider_asset_order_df.iloc[0].provider_id == provider.id
+    assert provider_asset_order_df.iloc[0].from_asset_id == from_asset.id
+    assert provider_asset_order_df.iloc[0].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[0].price == 10001
+    assert provider_asset_order_df.iloc[0].volume == 10002
+    assert provider_asset_order_df.iloc[1].timestamp == timestamp
+    assert provider_asset_order_df.iloc[1].provider_id == provider.id
+    assert provider_asset_order_df.iloc[1].from_asset_id == from_asset.id
+    assert provider_asset_order_df.iloc[1].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[1].price == 10001
+    assert provider_asset_order_df.iloc[1].volume == 10002
+    assert provider_asset_order_df.iloc[0].id != provider_asset_order_df.iloc[1].id
