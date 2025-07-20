@@ -327,11 +327,17 @@ class ProviderAssetMarket(Base):
         primary_key=True,
         comment="The identifier of the provider",
     )
-    asset_id: Mapped[int] = mapped_column(
+    from_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         nullable=False,
         primary_key=True,
-        comment="The identifier of the asset",
+        comment="The identifier of the from asset. This is also called the base asset.",
+    )
+    to_asset_id: Mapped[int] = mapped_column(
+        ForeignKey("asset.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the to asset. This is also called the quote asset.",
     )
     close: Mapped[float] = mapped_column(
         nullable=True, comment="The closing price of the provider asset market"
