@@ -362,7 +362,7 @@ class ProviderAssetMarket(Base):
     )
 
     def __repr__(self):
-        return f"{ProviderAssetMarket.__name__}(timestamp={self.timestamp}, provider_id={self.provider_id}, asset_id={self.asset_id})"
+        return f"{ProviderAssetMarket.__name__}(timestamp={self.timestamp}, provider_id={self.provider_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id})"
 
 
 class ContentType(Base):
