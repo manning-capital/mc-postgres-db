@@ -682,15 +682,23 @@ class ProviderAssetGroupAttribute(Base):
     )
     linear_fit_alpha: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The alpha parameter (intercept) for the linear fit equation to_asset = alpha + beta * from_asset",
+        comment="The alpha parameter (intercept) for the linear fit equation to_asset = alpha + beta * from_asset. From RollingOLS.params[-1, 0] when using sm.add_constant()",
     )
     linear_fit_beta: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The beta parameter (slope) for the linear fit equation to_asset = alpha + beta * from_asset",
+        comment="The beta parameter (slope) for the linear fit equation to_asset = alpha + beta * from_asset. From RollingOLS.params[-1, 1] when using sm.add_constant()",
     )
     linear_fit_mse: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The mean squared error (MSE) of the linear fit between the from_asset (independent variable) and to_asset (dependent variable) in the asset group pair",
+        comment="The mean squared error (MSE) of the linear fit between the from_asset (independent variable) and to_asset (dependent variable) in the asset group pair. From RollingOLS.mse_resid",
+    )
+    linear_fit_r_squared: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The R-squared (coefficient of determination) of the linear fit, indicating the proportion of variance explained by the regression. From RollingOLS.rsquared",
+    )
+    linear_fit_r_squared_adj: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The adjusted R-squared of the linear fit, accounting for the number of predictors. From RollingOLS.rsquared_adj",
     )
 
     def __repr__(self):

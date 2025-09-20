@@ -14,7 +14,7 @@ This package provides SQLAlchemy ORM models and database utilities for managing 
 - **Order Models**: `ProviderAssetOrder` table for tracking trading orders between assets
 - **Content Models**: `ContentType`, `ProviderContent`, and `AssetContent` tables for managing news articles and social content
 - **Sentiment Models**: `SentimentType` and `ProviderContentSentiment` tables for analyzing content sentiment
-- **Asset Group Models**: `AssetGroup`, `AssetGroupMember`, and `ProviderAssetGroupAttribute` tables for grouping assets and storing group-level analytics
+- **Asset Group Models**: `AssetGroup`, `AssetGroupMember`, and `ProviderAssetGroupAttribute` tables for pairs trading with asset grouping and statistical analytics
 - **Relation Models**: `ProviderAsset` table for mapping relationships between providers and assets
 
 ## Installation
@@ -107,8 +107,12 @@ with Session(engine) as session:
 - **SentimentType**: Categorizes sentiment analysis methods (e.g., PROVIDER, NLTK, VADER) with names and descriptions
 - **ProviderContentSentiment**: Stores sentiment analysis results for content with positive, negative, neutral, and overall sentiment scores
 - **AssetGroup**: Groups assets that share common attributes with names and descriptions
-- **AssetGroupMember**: Maps assets to asset groups with optional ordering
-- **ProviderAssetGroupAttribute**: Stores group-level analytics including cointegration p-values, Ornstein-Uhlenbeck process parameters (mu, theta, sigma), and linear fit parameters (alpha, beta, MSE) for pairs trading strategies
+- **AssetGroupMember**: Maps asset pairs to asset groups for pairs trading (from_asset_id, to_asset_id)
+- **ProviderAssetGroupAttribute**: Stores comprehensive statistical analytics for pairs trading including:
+  - Cointegration p-values for stationarity testing
+  - Ornstein-Uhlenbeck process parameters (mu, theta, sigma) for mean reversion modeling
+  - Linear regression parameters (alpha, beta) and fit statistics (MSE, R-squared, standard errors, t-values, p-values, F-statistics)
+  - Supports multiple lookback windows and provider-specific calculations
 
 ### Database Schema Features
 
@@ -117,6 +121,8 @@ with Session(engine) as session:
 - **Soft Delete Pattern**: Uses is_active flags to mark records as inactive without deletion
 - **Time Series Data**: Market data is organized by timestamp for efficient time-series operations
 - **Cross-Reference Tables**: Enables many-to-many relationships between assets, providers, and content
+- **Pairs Trading Support**: Specialized tables for pairs trading with statistical measures and multiple time windows
+- **Composite Primary Keys**: Ensures uniqueness across multiple dimensions (timestamp, provider, asset group, lookback window)
 
 ## Development
 
