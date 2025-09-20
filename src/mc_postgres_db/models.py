@@ -566,3 +566,130 @@ class AssetContent(Base):
         server_default=func.now(),
         comment="The timestamp of the creation of the asset content",
     )
+
+
+class AssetGroup(Base):
+    __tablename__ = "asset_group"
+    __table_args__ = {
+        "comment": "The asset group, will store groups of assets that share common attributes."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the asset group"
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the asset group"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the asset group"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the asset group is active"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset group",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the asset group",
+    )
+
+    def __repr__(self):
+        return f"{AssetGroup.__name__}({self.id}, {self.name})"
+
+
+class AssetGroupMember(Base):
+    __tablename__ = "asset_group_member"
+    __table_args__ = {
+        "comment": "The asset group member, will store which assets belong to which groups."
+    }
+
+    asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("asset_group.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the asset group",
+    )
+    asset_id: Mapped[int] = mapped_column(
+        ForeignKey("asset.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the asset",
+    )
+    order: Mapped[Optional[int]] = mapped_column(
+        nullable=True,
+        comment="The order of the asset within the group (optional)",
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset group member",
+    )
+
+    def __repr__(self):
+        return f"{AssetGroupMember.__name__}(asset_group_id={self.asset_group_id}, asset_id={self.asset_id})"
+
+
+class ProviderAssetGroupAttribute(Base):
+    __tablename__ = "provider_asset_group_attribute"
+    __table_args__ = {
+        "comment": "The provider asset group attribute, will store shared attributes for asset groups from providers such as cointegration p-value and OL process parameters."
+    }
+
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        primary_key=True,
+        comment="The timestamp of the provider asset group attributes",
+    )
+    provider_id: Mapped[int] = mapped_column(
+        ForeignKey("provider.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the provider",
+    )
+    asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("asset_group.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the asset group",
+    )
+    lookback_window_seconds: Mapped[int] = mapped_column(
+        nullable=False,
+        primary_key=True,
+        comment="The lookback window in seconds used for the calculation",
+    )
+    cointegration_p_value: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The cointegration p-value for the asset group",
+    )
+    ol_mu: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The mu parameter for the Ornstein-Uhlenbeck process",
+    )
+    ol_theta: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The theta parameter for the Ornstein-Uhlenbeck process",
+    )
+    ol_sigma: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The sigma parameter for the Ornstein-Uhlenbeck process",
+    )
+    linear_fit_alpha: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The alpha parameter (intercept) for the linear fit equation y = alpha + beta * X, where X is the first asset in the group (order matters)",
+    )
+    linear_fit_beta: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The beta parameter (slope) for the linear fit equation y = alpha + beta * X, where X is the first asset in the group (order matters)",
+    )
+    linear_fit_mse: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The mean squared error (MSE) of the linear fit between the first asset (X) and the second asset (Y) in the group. Asset order in the group determines which asset is used as the independent variable.",
+    )
+
+    def __repr__(self):
+        return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_id={self.provider_id}, asset_group_id={self.asset_group_id})"

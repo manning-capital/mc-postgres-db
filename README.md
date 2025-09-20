@@ -13,6 +13,8 @@ This package provides SQLAlchemy ORM models and database utilities for managing 
 - **Market Data Models**: `ProviderAssetMarket` table for storing OHLCV and bid/ask price data
 - **Order Models**: `ProviderAssetOrder` table for tracking trading orders between assets
 - **Content Models**: `ContentType`, `ProviderContent`, and `AssetContent` tables for managing news articles and social content
+- **Sentiment Models**: `SentimentType` and `ProviderContentSentiment` tables for analyzing content sentiment
+- **Asset Group Models**: `AssetGroup`, `AssetGroupMember`, and `ProviderAssetGroupAttribute` tables for grouping assets and storing group-level analytics
 - **Relation Models**: `ProviderAsset` table for mapping relationships between providers and assets
 
 ## Installation
@@ -47,7 +49,7 @@ uv sync
 ```python
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
-from mcpdb.tables import Asset, Provider, ProviderAssetMarket
+from mc_postgres_db.models import Asset, Provider, ProviderAssetMarket
 
 # Create database connection
 url = "postgresql://username:password@localhost:5432/mc_trading_db"
@@ -67,8 +69,9 @@ with Session(engine) as session:
     stmt = (
         select(ProviderAssetMarket)
         .where(
-            ProviderAssetMarket.asset_id == 1,  # Bitcoin for example
-            ProviderAssetMarket.provider_id == 2,  # Binance for example
+            ProviderAssetMarket.from_asset_id == 1,  # Bitcoin for example
+            ProviderAssetMarket.to_asset_id == 2,    # USD for example
+            ProviderAssetMarket.provider_id == 3,    # Binance for example
         )
         .order_by(ProviderAssetMarket.timestamp.desc())
         .limit(10)
@@ -97,10 +100,15 @@ with Session(engine) as session:
 - **Provider**: Represents data sources with references to provider types and optional underlying providers
 - **ProviderAsset**: Maps the relationship between providers and assets with asset codes and active status
 - **ProviderAssetOrder**: Tracks orders for assets from providers including timestamp, price, and volume
-- **ProviderAssetMarket**: Stores OHLCV (Open, High, Low, Close, Volume) market data and bid/ask prices
+- **ProviderAssetMarket**: Stores OHLCV (Open, High, Low, Close, Volume) market data and bid/ask prices for asset pairs
 - **ContentType**: Categorizes content (e.g., news articles, social media posts) with names and descriptions
 - **ProviderContent**: Stores content from providers with timestamps, titles, descriptions, and full content
 - **AssetContent**: Maps the relationship between content and assets
+- **SentimentType**: Categorizes sentiment analysis methods (e.g., PROVIDER, NLTK, VADER) with names and descriptions
+- **ProviderContentSentiment**: Stores sentiment analysis results for content with positive, negative, neutral, and overall sentiment scores
+- **AssetGroup**: Groups assets that share common attributes with names and descriptions
+- **AssetGroupMember**: Maps assets to asset groups with optional ordering
+- **ProviderAssetGroupAttribute**: Stores group-level analytics including cointegration p-values, Ornstein-Uhlenbeck process parameters (mu, theta, sigma), and linear fit parameters (alpha, beta, MSE) for pairs trading strategies
 
 ### Database Schema Features
 
@@ -187,7 +195,7 @@ This database integrates with various financial data providers:
 - Connection pooling for high-throughput operations
 - Caching layer for frequently accessed data
 
-## Testing Utilties
+## Testing Utilities
 
 This package provides a robust testing harness for database-related tests, allowing you to run your tests against a temporary SQLite database that mirrors your PostgreSQL schema. This is especially useful for testing Prefect flows and tasks that interact with the database, without requiring a live PostgreSQL instance or extensive mocking.
 
