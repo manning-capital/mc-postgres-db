@@ -682,15 +682,15 @@ class ProviderAssetGroupAttribute(Base):
     )
     linear_fit_alpha: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The alpha parameter (intercept) for the linear fit equation to_asset = alpha + beta * from_asset. From RollingOLS.params[-1, 0] when using sm.add_constant()",
+        comment="The alpha parameter (intercept) for the linear fit equation to_asset_2 = alpha + beta * to_asset_1. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.params[-1, 0] when using sm.add_constant()",
     )
     linear_fit_beta: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The beta parameter (slope) for the linear fit equation to_asset = alpha + beta * from_asset. From RollingOLS.params[-1, 1] when using sm.add_constant()",
+        comment="The beta parameter (slope) for the linear fit equation to_asset_2 = alpha + beta * to_asset_1. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.params[-1, 1] when using sm.add_constant()",
     )
     linear_fit_mse: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The mean squared error (MSE) of the linear fit between the from_asset (independent variable) and to_asset (dependent variable) in the asset group pair. From RollingOLS.mse_resid",
+        comment="The mean squared error (MSE) of the linear fit between to_asset_1 (independent variable) and to_asset_2 (dependent variable) in the asset group pair. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.mse_resid",
     )
     linear_fit_r_squared: Mapped[Optional[float]] = mapped_column(
         nullable=True,

@@ -1,8 +1,8 @@
 """Adding tables for storing asset group attributes
 
-Revision ID: 63d13454142d
+Revision ID: a813e120c0a8
 Revises: 0363c25292b7
-Create Date: 2025-09-20 11:38:17.749777
+Create Date: 2025-09-20 11:47:47.681764
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "63d13454142d"
+revision: str = "a813e120c0a8"
 down_revision: Union[str, Sequence[str], None] = "0363c25292b7"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -166,19 +166,19 @@ def upgrade() -> None:
             "linear_fit_alpha",
             sa.Float(),
             nullable=True,
-            comment="The alpha parameter (intercept) for the linear fit equation to_asset = alpha + beta * from_asset. From RollingOLS.params[-1, 0] when using sm.add_constant()",
+            comment="The alpha parameter (intercept) for the linear fit equation to_asset_2 = alpha + beta * to_asset_1. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.params[-1, 0] when using sm.add_constant()",
         ),
         sa.Column(
             "linear_fit_beta",
             sa.Float(),
             nullable=True,
-            comment="The beta parameter (slope) for the linear fit equation to_asset = alpha + beta * from_asset. From RollingOLS.params[-1, 1] when using sm.add_constant()",
+            comment="The beta parameter (slope) for the linear fit equation to_asset_2 = alpha + beta * to_asset_1. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.params[-1, 1] when using sm.add_constant()",
         ),
         sa.Column(
             "linear_fit_mse",
             sa.Float(),
             nullable=True,
-            comment="The mean squared error (MSE) of the linear fit between the from_asset (independent variable) and to_asset (dependent variable) in the asset group pair. From RollingOLS.mse_resid",
+            comment="The mean squared error (MSE) of the linear fit between to_asset_1 (independent variable) and to_asset_2 (dependent variable) in the asset group pair. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.mse_resid",
         ),
         sa.Column(
             "linear_fit_r_squared",
