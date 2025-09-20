@@ -642,16 +642,15 @@ class ProviderAssetGroupMember(Base):
         nullable=False,
         comment="The order of the asset pair within the group (1, 2, 3, etc.). Required field for sequencing members within the group.",
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        server_default=func.now(),
-        comment="The timestamp of the creation of the asset group member",
-    )
-
     # ORM relationship back to the group
     group: Mapped["ProviderAssetGroup"] = relationship(
         "ProviderAssetGroup",
         back_populates="members",
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset group member",
     )
 
     def __repr__(self):
