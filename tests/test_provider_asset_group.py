@@ -589,3 +589,138 @@ async def test_asset_group_inactive_status():
         )
         group_ids = {group.id for group in active_groups}
         assert provider_asset_group.id not in group_ids
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_member_ordering():
+    """Test the optional order column for ProviderAssetGroupMember."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Ordered Test Group",
+            description="Testing ordering functionality",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add members with explicit ordering
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=1,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+            order=2,
+        )
+        session.add_all([member1, member2])
+        session.commit()
+
+        # Verify ordering
+        ordered_members = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .order_by(ProviderAssetGroupMember.order.asc())
+            .all()
+        )
+
+        assert len(ordered_members) == 2
+        assert ordered_members[0].order == 1
+        assert ordered_members[0].to_asset_id == btc_asset.id
+        assert ordered_members[1].order == 2
+        assert ordered_members[1].to_asset_id == eth_asset.id
+
+        # Test mixed ordering (some with order, some without)
+        member3 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=btc_asset.id,
+            to_asset_id=eth_asset.id,
+            order=None,  # No order specified
+        )
+        session.add(member3)
+        session.commit()
+
+        # Query with null handling - ordered items first, then unordered
+        mixed_members = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .order_by(
+                ProviderAssetGroupMember.order.asc().nulls_last(),
+                ProviderAssetGroupMember.to_asset_id.asc(),
+            )
+            .all()
+        )
+
+        assert len(mixed_members) == 3
+        # First two should be ordered
+        assert mixed_members[0].order == 1
+        assert mixed_members[1].order == 2
+        # Last one should be unordered (null)
+        assert mixed_members[2].order is None
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_member_no_ordering():
+    """Test ProviderAssetGroupMember without any ordering."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Unordered Test Group",
+            description="Testing no ordering",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add members without ordering
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=None,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+            order=None,
+        )
+        session.add_all([member1, member2])
+        session.commit()
+
+        # Verify no ordering
+        unordered_members = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .all()
+        )
+
+        assert len(unordered_members) == 2
+        # Both should have null order
+        for member in unordered_members:
+            assert member.order is None

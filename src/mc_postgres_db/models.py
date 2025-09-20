@@ -571,7 +571,7 @@ class AssetContent(Base):
 class ProviderAssetGroup(Base):
     __tablename__ = "provider_asset_group"
     __table_args__ = {
-        "comment": "The provider asset group, will store groups of assets that share common attributes."
+        "comment": "Groups provider assets for calculating aggregated statistical values between members. Each group contains provider asset pairs that share statistical relationships for cointegration analysis, mean reversion modeling, and linear regression calculations."
     }
 
     id: Mapped[int] = mapped_column(
@@ -605,7 +605,7 @@ class ProviderAssetGroup(Base):
 class ProviderAssetGroupMember(Base):
     __tablename__ = "provider_asset_group_member"
     __table_args__ = {
-        "comment": "The provider asset group member, will store pairs of assets that belong to groups for pairs trading across different providers."
+        "comment": "Maps provider asset pairs to statistical groups for aggregated calculations. Each record represents a pair of assets (from_asset_id, to_asset_id) from a specific provider that belong to a statistical group. Optional order field allows sequencing within groups for hierarchical analysis."
     }
 
     provider_asset_group_id: Mapped[int] = mapped_column(
@@ -632,6 +632,10 @@ class ProviderAssetGroupMember(Base):
         nullable=False,
         comment="The identifier of the to asset (quote asset)",
     )
+    order: Mapped[Optional[int]] = mapped_column(
+        nullable=True,
+        comment="The order of the asset pair within the group (1, 2, 3, etc.). If null, no specific order is assigned.",
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
@@ -645,7 +649,7 @@ class ProviderAssetGroupMember(Base):
 class ProviderAssetGroupAttribute(Base):
     __tablename__ = "provider_asset_group_attribute"
     __table_args__ = {
-        "comment": "The provider asset group attribute, will store shared attributes for asset groups from providers such as cointegration p-value and OL process parameters."
+        "comment": "Stores aggregated statistical calculations for provider asset groups across multiple time windows. Contains cointegration analysis results, Ornstein-Uhlenbeck process parameters for mean reversion modeling, and comprehensive linear regression statistics including coefficients, fit measures, and significance tests."
     }
 
     timestamp: Mapped[datetime.datetime] = mapped_column(
