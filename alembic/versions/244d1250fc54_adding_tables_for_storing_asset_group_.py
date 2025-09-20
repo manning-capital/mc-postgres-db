@@ -1,19 +1,19 @@
 """Adding tables for storing asset group attributes
 
-Revision ID: c3584a29768c
+Revision ID: 244d1250fc54
 Revises: 0363c25292b7
-Create Date: 2025-09-20 12:45:45.884392
+Create Date: 2025-09-20 13:20:58.430165
 
 """
 
 from typing import Sequence, Union
 
+from alembic import op
 import sqlalchemy as sa
 
-from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "c3584a29768c"
+revision: str = "244d1250fc54"
 down_revision: Union[str, Sequence[str], None] = "0363c25292b7"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -180,8 +180,8 @@ def upgrade() -> None:
         sa.Column(
             "order",
             sa.Integer(),
-            nullable=True,
-            comment="The order of the asset pair within the group (1, 2, 3, etc.). If null, no specific order is assigned.",
+            nullable=False,
+            comment="The order of the asset pair within the group (1, 2, 3, etc.). Required field for sequencing members within the group.",
         ),
         sa.Column(
             "created_at",
