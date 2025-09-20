@@ -567,6 +567,50 @@ class AssetContent(Base):
     )
 
 
+class AssetGroupType(Base):
+    __tablename__ = "asset_group_type"
+    __table_args__ = {
+        "comment": "The type of asset group, e.g. statistical pairs trading, classical arbitrage, triangular arbitrage, etc."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the asset group type"
+    )
+    symbol: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="The symbol of the asset group type, e.g. PAIRS_TRADING, CLASSICAL_ARBITRAGE, TRIANGULAR_ARBITRAGE, etc.",
+        unique=True,
+    )
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="The name of the asset group type, e.g. Pairs Trading, Classical Arbitrage, Triangular Arbitrage, etc.",
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000),
+        nullable=True,
+        comment="The description of the asset group type, e.g. statistical pairs trading, classical arbitrage, triangular arbitrage, etc.",
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the asset group type is active"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset group type",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the asset group type",
+    )
+
+    def __repr__(self):
+        return f"{AssetGroupType.__name__}({self.id}, {self.name})"
+
+
 class ProviderAssetGroup(Base):
     __tablename__ = "provider_asset_group"
     __table_args__ = {
@@ -575,6 +619,11 @@ class ProviderAssetGroup(Base):
 
     id: Mapped[int] = mapped_column(
         primary_key=True, comment="The unique identifier of the asset group"
+    )
+    asset_group_type_id: Mapped[int] = mapped_column(
+        ForeignKey("asset_group_type.id"),
+        nullable=False,
+        comment="The identifier of the asset group type",
     )
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="The name of the asset group"
