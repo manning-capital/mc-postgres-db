@@ -566,3 +566,140 @@ class AssetContent(Base):
         server_default=func.now(),
         comment="The timestamp of the creation of the asset content",
     )
+
+
+class AssetGroup(Base):
+    __tablename__ = "asset_group"
+    __table_args__ = {
+        "comment": "The asset group, will store groups of assets that share common attributes."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the asset group"
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the asset group"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the asset group"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the asset group is active"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset group",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the asset group",
+    )
+
+    def __repr__(self):
+        return f"{AssetGroup.__name__}({self.id}, {self.name})"
+
+
+class AssetGroupMember(Base):
+    __tablename__ = "asset_group_member"
+    __table_args__ = {
+        "comment": "The asset group member, will store pairs of assets that belong to groups for pairs trading."
+    }
+
+    asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("asset_group.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the asset group",
+    )
+    from_asset_id: Mapped[int] = mapped_column(
+        ForeignKey("asset.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the from asset (base asset)",
+    )
+    to_asset_id: Mapped[int] = mapped_column(
+        ForeignKey("asset.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the to asset (quote asset)",
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the asset group member",
+    )
+
+    def __repr__(self):
+        return f"{AssetGroupMember.__name__}(asset_group_id={self.asset_group_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id})"
+
+
+class ProviderAssetGroupAttribute(Base):
+    __tablename__ = "provider_asset_group_attribute"
+    __table_args__ = {
+        "comment": "The provider asset group attribute, will store shared attributes for asset groups from providers such as cointegration p-value and OL process parameters."
+    }
+
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        primary_key=True,
+        comment="The timestamp of the provider asset group attributes",
+    )
+    provider_id: Mapped[int] = mapped_column(
+        ForeignKey("provider.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the provider",
+    )
+    asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("asset_group.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the asset group",
+    )
+    lookback_window_seconds: Mapped[int] = mapped_column(
+        nullable=False,
+        primary_key=True,
+        comment="The lookback window in seconds used for the calculation",
+    )
+    cointegration_p_value: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The cointegration p-value for the asset group",
+    )
+    ol_mu: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The mu parameter for the Ornstein-Uhlenbeck process",
+    )
+    ol_theta: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The theta parameter for the Ornstein-Uhlenbeck process",
+    )
+    ol_sigma: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The sigma parameter for the Ornstein-Uhlenbeck process",
+    )
+    linear_fit_alpha: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The alpha parameter (intercept) for the linear fit equation to_asset_2 = alpha + beta * to_asset_1. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.params[-1, 0] when using sm.add_constant()",
+    )
+    linear_fit_beta: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The beta parameter (slope) for the linear fit equation to_asset_2 = alpha + beta * to_asset_1. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.params[-1, 1] when using sm.add_constant()",
+    )
+    linear_fit_mse: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The mean squared error (MSE) of the linear fit between to_asset_1 (independent variable) and to_asset_2 (dependent variable) in the asset group pair. The numbers correspond to the order in the asset group member table (to_asset_1 = to_asset_id with order of 1, to_asset_2 = to_asset_id with order of 2). From RollingOLS.mse_resid",
+    )
+    linear_fit_r_squared: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The R-squared (coefficient of determination) of the linear fit, indicating the proportion of variance explained by the regression. From RollingOLS.rsquared",
+    )
+    linear_fit_r_squared_adj: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+        comment="The adjusted R-squared of the linear fit, accounting for the number of predictors. From RollingOLS.rsquared_adj",
+    )
+
+    def __repr__(self):
+        return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_id={self.provider_id}, asset_group_id={self.asset_group_id})"

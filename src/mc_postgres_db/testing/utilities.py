@@ -14,7 +14,19 @@ def clear_database(engine: Engine):
     """
     Clear the database of all data.
     """
+
+    # Check if the engine is a SQLite engine.
+    if engine.url.drivername != "sqlite":
+        raise ValueError("The engine is not a SQLite engine.")
+
+    # Check if the database file exists.
+    if not os.path.exists(engine.url.database):
+        raise ValueError(f"The database file {engine.url.database} does not exist.")
+
+    # Drop all tables in the database.
     models.Base.metadata.drop_all(engine)
+
+    # Create all tables in the database.
     models.Base.metadata.create_all(engine)
 
 

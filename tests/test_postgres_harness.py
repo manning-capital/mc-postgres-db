@@ -4,6 +4,7 @@ import pandas as pd
 import datetime as dt
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
 
 import pytest
 from sqlalchemy.orm import Session
@@ -11,88 +12,12 @@ from mc_postgres_db.prefect.tasks import get_engine, set_data
 from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
 from sqlalchemy import Engine, select
-from mc_postgres_db.testing.utilities import postgres_test_harness, clear_database
+from tests.utils import create_base_data
+from mc_postgres_db.testing.utilities import clear_database
 from mc_postgres_db.models import (
     Base,
-    AssetType,
-    Asset,
-    ProviderType,
-    Provider,
     ProviderAssetMarket,
 )
-
-
-def create_base_data(
-    engine: Engine,
-) -> tuple[AssetType, Asset, Asset, ProviderType, Provider]:
-    # Create a new asset type.
-    with Session(engine) as session:
-        # Clear the database.
-        clear_database(engine)
-
-        # Create a new asset type.
-        asset_type = AssetType(
-            name="CryptoCurrency",
-            description="CryptoCurrency Asset Type",
-        )
-        session.add(asset_type)
-        session.commit()
-        session.refresh(asset_type)
-
-    with Session(engine) as session:
-        # Create a from asset.
-        from_asset = Asset(
-            asset_type_id=asset_type.id,
-            name="Bitcoin",
-            description="Bitcoin Asset",
-            symbol="BTC",
-            is_active=True,
-        )
-        session.add(from_asset)
-        session.commit()
-        session.refresh(from_asset)
-
-    with Session(engine) as session:
-        # Create a to asset.
-        to_asset = Asset(
-            asset_type_id=asset_type.id,
-            name="Ethereum",
-            description="Ethereum Asset",
-            symbol="ETH",
-            is_active=True,
-        )
-        session.add(to_asset)
-        session.commit()
-        session.refresh(to_asset)
-
-    with Session(engine) as session:
-        # Create a new provider type.
-        provider_type = ProviderType(
-            name="CryptoCurrencyExchange",
-            description="CryptoCurrency Exchange Provider Type",
-        )
-        session.add(provider_type)
-        session.commit()
-        session.refresh(provider_type)
-
-    with Session(engine) as session:
-        # Create a new provider.
-        provider = Provider(
-            provider_type_id=provider_type.id,
-            name="Kraken",
-            description="Kraken CryptoCurrency Exchange Provider",
-        )
-        session.add(provider)
-        session.commit()
-        session.refresh(provider)
-
-    return asset_type, from_asset, to_asset, provider_type, provider
-
-
-@pytest.fixture(scope="session", autouse=True)
-def postgres_harness():
-    with postgres_test_harness(prefect_server_startup_timeout=45):
-        yield
 
 
 def test_engine_is_mocked():
@@ -221,7 +146,9 @@ def test_use_set_data_upsert_to_add_provider_market_data():
     engine = get_engine()
 
     # Create the base data.
-    asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
 
     with Session(engine) as session:
         # Add the market data again using set data without close. We expect that the close will be null.
@@ -233,8 +160,8 @@ def test_use_set_data_upsert_to_add_provider_market_data():
                     {
                         "timestamp": timestamp,
                         "provider_id": provider.id,
-                        "from_asset_id": from_asset.id,
-                        "to_asset_id": to_asset.id,
+                        "from_asset_id": btc_asset.id,
+                        "to_asset_id": usd_asset.id,
                         "close": 10001,
                         "high": 10002,
                         "low": 10003,
@@ -253,8 +180,8 @@ def test_use_set_data_upsert_to_add_provider_market_data():
         provider_asset_market_result = session.execute(stmt).scalar_one()
         assert provider_asset_market_result.timestamp == timestamp
         assert provider_asset_market_result.provider_id == provider.id
-        assert provider_asset_market_result.from_asset_id == from_asset.id
-        assert provider_asset_market_result.to_asset_id == to_asset.id
+        assert provider_asset_market_result.from_asset_id == btc_asset.id
+        assert provider_asset_market_result.to_asset_id == usd_asset.id
         assert provider_asset_market_result.close == 10001
         assert provider_asset_market_result.high == 10002
         assert provider_asset_market_result.low == 10003
@@ -273,7 +200,9 @@ def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns
     engine = get_engine()
 
     # Create the base data.
-    asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
 
     with Session(engine) as session:
         # Add the market data again using set data without close. We expect that the close will be null.
@@ -285,8 +214,8 @@ def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns
                     {
                         "timestamp": timestamp,
                         "provider_id": provider.id,
-                        "from_asset_id": from_asset.id,
-                        "to_asset_id": to_asset.id,
+                        "from_asset_id": btc_asset.id,
+                        "to_asset_id": usd_asset.id,
                         "high": 10002,
                         "low": 10003,
                         "open": 10004,
@@ -302,8 +231,8 @@ def test_use_set_data_upsert_to_add_provider_market_data_with_incomplete_columns
         provider_asset_market_result = session.execute(stmt).scalar_one()
         assert provider_asset_market_result.timestamp == timestamp
         assert provider_asset_market_result.provider_id == provider.id
-        assert provider_asset_market_result.from_asset_id == from_asset.id
-        assert provider_asset_market_result.to_asset_id == to_asset.id
+        assert provider_asset_market_result.from_asset_id == btc_asset.id
+        assert provider_asset_market_result.to_asset_id == usd_asset.id
         assert provider_asset_market_result.close is None
         assert provider_asset_market_result.high == 10002
         assert provider_asset_market_result.low == 10003
@@ -320,7 +249,9 @@ def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_comp
     engine = get_engine()
 
     # Create the base data.
-    asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
 
     with Session(engine) as session:
         # Add market data using the set data.
@@ -332,8 +263,8 @@ def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_comp
                     {
                         "timestamp": timestamp,
                         "provider_id": provider.id,
-                        "from_asset_id": from_asset.id,
-                        "to_asset_id": to_asset.id,
+                        "from_asset_id": btc_asset.id,
+                        "to_asset_id": usd_asset.id,
                         "close": 10001,
                         "high": 10002,
                         "low": 10003,
@@ -353,8 +284,8 @@ def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_comp
                     {
                         "timestamp": timestamp,
                         "provider_id": provider.id,
-                        "from_asset_id": from_asset.id,
-                        "to_asset_id": to_asset.id,
+                        "from_asset_id": btc_asset.id,
+                        "to_asset_id": usd_asset.id,
                         "high": 10002,
                         "low": 10003,
                         "open": 10004,
@@ -370,8 +301,8 @@ def test_use_set_data_upsert_to_add_provider_market_data_and_overwrite_with_comp
         provider_asset_market_result = session.execute(stmt).scalar_one()
         assert provider_asset_market_result.timestamp == timestamp
         assert provider_asset_market_result.provider_id == provider.id
-        assert provider_asset_market_result.from_asset_id == from_asset.id
-        assert provider_asset_market_result.to_asset_id == to_asset.id
+        assert provider_asset_market_result.from_asset_id == btc_asset.id
+        assert provider_asset_market_result.to_asset_id == usd_asset.id
         assert provider_asset_market_result.close == 10001
         assert provider_asset_market_result.high == 10002
         assert provider_asset_market_result.low == 10003
@@ -389,7 +320,9 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
     engine = await get_engine_async()
 
     # Create the base data.
-    asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
 
     # Create a new asset type.
     with Session(engine) as session:
@@ -402,8 +335,8 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
                     {
                         "timestamp": timestamp,
                         "provider_id": provider.id,
-                        "from_asset_id": from_asset.id,
-                        "to_asset_id": to_asset.id,
+                        "from_asset_id": btc_asset.id,
+                        "to_asset_id": usd_asset.id,
                         "close": 10001,
                         "high": 10002,
                         "low": 10003,
@@ -423,8 +356,8 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
                     {
                         "timestamp": timestamp,
                         "provider_id": provider.id,
-                        "from_asset_id": from_asset.id,
-                        "to_asset_id": to_asset.id,
+                        "from_asset_id": btc_asset.id,
+                        "to_asset_id": usd_asset.id,
                         "high": 10002,
                         "low": 10003,
                         "open": 10004,
@@ -440,8 +373,8 @@ async def test_use_async_set_data_upsert_to_add_provider_market_data():
         provider_asset_market_result = session.execute(stmt).scalar_one()
         assert provider_asset_market_result.timestamp == timestamp
         assert provider_asset_market_result.provider_id == provider.id
-        assert provider_asset_market_result.from_asset_id == from_asset.id
-        assert provider_asset_market_result.to_asset_id == to_asset.id
+        assert provider_asset_market_result.from_asset_id == btc_asset.id
+        assert provider_asset_market_result.to_asset_id == usd_asset.id
         assert provider_asset_market_result.close == 10001
         assert provider_asset_market_result.high == 10002
         assert provider_asset_market_result.low == 10003
@@ -458,7 +391,9 @@ def test_use_set_data_append_to_add_provider_market_data():
     engine = get_engine()
 
     # Create the base data.
-    asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
 
     # Generate fake data.
     timestamp = dt.datetime.now()
@@ -467,8 +402,8 @@ def test_use_set_data_append_to_add_provider_market_data():
             {
                 "timestamp": timestamp,
                 "provider_id": provider.id,
-                "from_asset_id": from_asset.id,
-                "to_asset_id": to_asset.id,
+                "from_asset_id": btc_asset.id,
+                "to_asset_id": usd_asset.id,
                 "price": 10001,
                 "volume": 10002,
             }
@@ -495,14 +430,14 @@ def test_use_set_data_append_to_add_provider_market_data():
     assert provider_asset_order_df.shape[0] == 2
     assert provider_asset_order_df.iloc[0].timestamp == timestamp
     assert provider_asset_order_df.iloc[0].provider_id == provider.id
-    assert provider_asset_order_df.iloc[0].from_asset_id == from_asset.id
-    assert provider_asset_order_df.iloc[0].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[0].from_asset_id == btc_asset.id
+    assert provider_asset_order_df.iloc[0].to_asset_id == usd_asset.id
     assert provider_asset_order_df.iloc[0].price == 10001
     assert provider_asset_order_df.iloc[0].volume == 10002
     assert provider_asset_order_df.iloc[1].timestamp == timestamp
     assert provider_asset_order_df.iloc[1].provider_id == provider.id
-    assert provider_asset_order_df.iloc[1].from_asset_id == from_asset.id
-    assert provider_asset_order_df.iloc[1].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[1].from_asset_id == btc_asset.id
+    assert provider_asset_order_df.iloc[1].to_asset_id == usd_asset.id
     assert provider_asset_order_df.iloc[1].price == 10001
     assert provider_asset_order_df.iloc[1].volume == 10002
     assert provider_asset_order_df.iloc[0].id != provider_asset_order_df.iloc[1].id
@@ -518,7 +453,9 @@ async def test_use_async_set_data_append_to_add_provider_market_data():
     engine = await get_engine_async()
 
     # Create the base data.
-    asset_type, from_asset, to_asset, provider_type, provider = create_base_data(engine)
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
 
     # Generate fake data.
     timestamp = dt.datetime.now()
@@ -527,8 +464,8 @@ async def test_use_async_set_data_append_to_add_provider_market_data():
             {
                 "timestamp": timestamp,
                 "provider_id": provider.id,
-                "from_asset_id": from_asset.id,
-                "to_asset_id": to_asset.id,
+                "from_asset_id": btc_asset.id,
+                "to_asset_id": usd_asset.id,
                 "price": 10001,
                 "volume": 10002,
             }
@@ -555,14 +492,14 @@ async def test_use_async_set_data_append_to_add_provider_market_data():
     assert provider_asset_order_df.shape[0] == 2
     assert provider_asset_order_df.iloc[0].timestamp == timestamp
     assert provider_asset_order_df.iloc[0].provider_id == provider.id
-    assert provider_asset_order_df.iloc[0].from_asset_id == from_asset.id
-    assert provider_asset_order_df.iloc[0].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[0].from_asset_id == btc_asset.id
+    assert provider_asset_order_df.iloc[0].to_asset_id == usd_asset.id
     assert provider_asset_order_df.iloc[0].price == 10001
     assert provider_asset_order_df.iloc[0].volume == 10002
     assert provider_asset_order_df.iloc[1].timestamp == timestamp
     assert provider_asset_order_df.iloc[1].provider_id == provider.id
-    assert provider_asset_order_df.iloc[1].from_asset_id == from_asset.id
-    assert provider_asset_order_df.iloc[1].to_asset_id == to_asset.id
+    assert provider_asset_order_df.iloc[1].from_asset_id == btc_asset.id
+    assert provider_asset_order_df.iloc[1].to_asset_id == usd_asset.id
     assert provider_asset_order_df.iloc[1].price == 10001
     assert provider_asset_order_df.iloc[1].volume == 10002
     assert provider_asset_order_df.iloc[0].id != provider_asset_order_df.iloc[1].id
