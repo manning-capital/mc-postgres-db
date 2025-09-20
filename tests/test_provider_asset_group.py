@@ -159,12 +159,12 @@ async def test_create_provider_asset_group_attribute():
             "lookback_window_seconds": len(T) * [window * 60],
         }
     )
-    provider_asset_group_attribute_df["cointegration_p_value"] = results.pvalues[-1, 1]
+    provider_asset_group_attribute_df["cointegration_p_value"] = results.pvalues[:, 1]
     provider_asset_group_attribute_df["ol_mu"] = mu
     provider_asset_group_attribute_df["ol_theta"] = theta
     provider_asset_group_attribute_df["ol_sigma"] = sigma
-    provider_asset_group_attribute_df["linear_fit_alpha"] = results.params[-1, 0]
-    provider_asset_group_attribute_df["linear_fit_beta"] = results.params[-1, 1]
+    provider_asset_group_attribute_df["linear_fit_alpha"] = results.params[:, 0]
+    provider_asset_group_attribute_df["linear_fit_beta"] = results.params[:, 1]
     provider_asset_group_attribute_df["linear_fit_mse"] = results.mse_resid
     provider_asset_group_attribute_df["linear_fit_r_squared"] = results.rsquared
     provider_asset_group_attribute_df["linear_fit_r_squared_adj"] = results.rsquared_adj
