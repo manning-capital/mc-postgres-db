@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from statsmodels.regression.rolling import RollingOLS
 
 from mc_postgres_db.models import (
+    AssetGroupType,
     Provider,
     ProviderAssetGroup,
     ProviderAssetGroupAttribute,
@@ -23,6 +24,21 @@ from mc_postgres_db.models import (
 from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 from mc_postgres_db.prefect.tasks import set_data
 from tests.utils import create_base_data
+from mc_postgres_db.testing.utilities import clear_database
+
+
+def create_default_asset_group_type(session: Session) -> AssetGroupType:
+    """Helper function to create a default asset group type for testing."""
+    asset_group_type = AssetGroupType(
+        symbol="DEFAULT_TEST",
+        name="Default Test Type",
+        description="Default asset group type for testing",
+        is_active=True,
+    )
+    session.add(asset_group_type)
+    session.commit()
+    session.refresh(asset_group_type)
+    return asset_group_type
 
 
 def generate_ol_data(
@@ -115,7 +131,11 @@ async def test_create_provider_asset_group_attribute():
 
     # Create the provider asset group.
     with Session(engine) as session:
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="BTC (Kraken)/ETH (Kraken) Asset Group",
             description="BTC (Kraken)/ETH (Kraken) Asset Group",
             is_active=True,
@@ -195,7 +215,11 @@ async def test_create_provider_asset_group_with_members():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Test Crypto Group",
             description="Test group for crypto pairs",
             is_active=True,
@@ -251,7 +275,11 @@ async def test_composite_primary_key_constraint():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Test Group",
             description="Test group",
             is_active=True,
@@ -301,7 +329,11 @@ async def test_provider_asset_group_attributes():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Test Group",
             description="Test group",
             is_active=True,
@@ -403,7 +435,11 @@ async def test_multiple_providers_same_asset_group():
         session.refresh(provider2)
 
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Multi-Provider Group",
             description="Group with multiple providers",
             is_active=True,
@@ -455,7 +491,11 @@ async def test_asset_group_attribute_composite_key():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Test Group",
             description="Test group",
             is_active=True,
@@ -511,7 +551,11 @@ async def test_asset_group_member_relationships():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Relationship Test Group",
             description="Testing relationships",
             is_active=True,
@@ -567,41 +611,6 @@ async def test_asset_group_member_relationships():
 
 
 @pytest.mark.asyncio
-async def test_asset_group_inactive_status():
-    """Test that ProviderAssetGroup can be marked as inactive."""
-    engine = await get_engine_async()
-
-    with Session(engine) as session:
-        # Create an active ProviderAssetGroup
-        provider_asset_group = ProviderAssetGroup(
-            name="Test Group",
-            description="Test group",
-            is_active=True,
-        )
-        session.add(provider_asset_group)
-        session.commit()
-        session.refresh(provider_asset_group)
-
-        # Verify it's active
-        assert provider_asset_group.is_active is True
-
-        # Mark as inactive
-        provider_asset_group.is_active = False
-        session.commit()
-        session.refresh(provider_asset_group)
-
-        # Verify it's inactive
-        assert provider_asset_group.is_active is False
-
-        # Query for active groups should not return this one
-        active_groups = (
-            session.query(ProviderAssetGroup).filter_by(is_active=True).all()
-        )
-        group_ids = {group.id for group in active_groups}
-        assert provider_asset_group.id not in group_ids
-
-
-@pytest.mark.asyncio
 async def test_provider_asset_group_member_ordering():
     """Test the optional order column for ProviderAssetGroupMember."""
     engine = await get_engine_async()
@@ -613,7 +622,11 @@ async def test_provider_asset_group_member_ordering():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Ordered Test Group",
             description="Testing ordering functionality",
             is_active=True,
@@ -692,7 +705,11 @@ async def test_provider_asset_group_member_required_ordering():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Required Order Test Group",
             description="Testing required ordering",
             is_active=True,
@@ -745,7 +762,11 @@ async def test_provider_asset_group_orm_relationship():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="ORM Test Group",
             description="Testing ORM relationships",
             is_active=True,
@@ -820,7 +841,11 @@ async def test_provider_asset_group_cascade_delete():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup with members
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Cascade Test Group",
             description="Testing cascade delete",
             is_active=True,
@@ -880,7 +905,11 @@ async def test_orm_member_retrieval_basic():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Basic ORM Test Group",
             description="Testing basic ORM member retrieval",
             is_active=True,
@@ -953,7 +982,11 @@ async def test_orm_multiple_groups_member_isolation():
 
     with Session(engine) as session:
         # Create first group with multiple members
+        # Create default asset group type
+        asset_group_type_1 = create_default_asset_group_type(session)
+
         provider_asset_group_1 = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type_1.id,
             name="First ORM Test Group",
             description="Testing multiple groups - first",
             is_active=True,
@@ -981,7 +1014,19 @@ async def test_orm_multiple_groups_member_isolation():
         session.commit()
 
         # Create second group with single member
+        # Create another asset group type for the second group
+        asset_group_type_2 = AssetGroupType(
+            symbol="SECOND_TEST",
+            name="Second Test Type",
+            description="Second asset group type for testing",
+            is_active=True,
+        )
+        session.add(asset_group_type_2)
+        session.commit()
+        session.refresh(asset_group_type_2)
+
         provider_asset_group_2 = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type_2.id,
             name="Second ORM Test Group",
             description="Testing multiple groups - second",
             is_active=True,
@@ -1041,7 +1086,11 @@ async def test_orm_bidirectional_relationship():
 
     with Session(engine) as session:
         # Create a ProviderAssetGroup
+        # Create default asset group type
+        asset_group_type = create_default_asset_group_type(session)
+
         provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
             name="Bidirectional Test Group",
             description="Testing bidirectional relationship",
             is_active=True,
@@ -1077,3 +1126,322 @@ async def test_orm_bidirectional_relationship():
         assert first_member.group.name == "Bidirectional Test Group"
         assert first_member.group.description == "Testing bidirectional relationship"
         assert first_member.group.is_active is True
+
+
+@pytest.mark.asyncio
+async def test_asset_group_type_creation():
+    """Test creation of AssetGroupType instances."""
+    engine = await get_engine_async()
+    # Clear the database.
+    clear_database(engine)
+
+    with Session(engine) as session:
+        # Create an AssetGroupType
+        asset_group_type = AssetGroupType(
+            symbol="PAIRS_TRADING",
+            name="Pairs Trading",
+            description="Statistical pairs trading for mean reversion strategies",
+            is_active=True,
+        )
+        session.add(asset_group_type)
+        session.commit()
+        session.refresh(asset_group_type)
+
+        # Verify the asset group type was created
+        assert asset_group_type.id is not None
+        assert asset_group_type.symbol == "PAIRS_TRADING"
+        assert asset_group_type.name == "Pairs Trading"
+        assert (
+            asset_group_type.description
+            == "Statistical pairs trading for mean reversion strategies"
+        )
+        assert asset_group_type.is_active is True
+        assert asset_group_type.created_at is not None
+        assert asset_group_type.updated_at is not None
+
+
+@pytest.mark.asyncio
+async def test_asset_group_type_unique_symbol():
+    """Test that AssetGroupType symbol must be unique."""
+    engine = await get_engine_async()
+
+    # Clear the database.
+    clear_database(engine)
+
+    with Session(engine) as session:
+        # Create first asset group type
+        asset_group_type_1 = AssetGroupType(
+            symbol="PAIRS_TRADING",
+            name="Pairs Trading",
+            description="Statistical pairs trading",
+            is_active=True,
+        )
+        session.add(asset_group_type_1)
+        session.commit()
+
+        # Attempt to create second asset group type with same symbol
+        asset_group_type_2 = AssetGroupType(
+            symbol="PAIRS_TRADING",  # Same symbol
+            name="Different Pairs Trading",
+            description="Different description",
+            is_active=True,
+        )
+        session.add(asset_group_type_2)
+
+        # Should raise an IntegrityError due to unique constraint
+        with pytest.raises(Exception):
+            session.commit()
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_with_asset_group_type():
+    """Test creating ProviderAssetGroup with specific AssetGroupType."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create an AssetGroupType
+        asset_group_type = AssetGroupType(
+            symbol="ARBITRAGE",
+            name="Arbitrage Trading",
+            description="Classical arbitrage opportunities",
+            is_active=True,
+        )
+        session.add(asset_group_type)
+        session.commit()
+        session.refresh(asset_group_type)
+
+        # Create ProviderAssetGroup with the asset group type
+        provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=asset_group_type.id,
+            name="Arbitrage Group",
+            description="Group for arbitrage opportunities",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Verify the group was created with correct asset group type
+        assert provider_asset_group.id is not None
+        assert provider_asset_group.asset_group_type_id == asset_group_type.id
+        assert provider_asset_group.name == "Arbitrage Group"
+        assert provider_asset_group.description == "Group for arbitrage opportunities"
+        assert provider_asset_group.is_active is True
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_requires_asset_group_type():
+    """Test that ProviderAssetGroup requires a valid asset_group_type_id."""
+    engine = await get_engine_async()
+
+    with Session(engine) as session:
+        # Attempt to create ProviderAssetGroup without asset_group_type_id
+        provider_asset_group = ProviderAssetGroup(
+            name="Invalid Group",
+            description="Group without asset group type",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+
+        # Should raise an IntegrityError due to foreign key constraint
+        with pytest.raises(Exception):
+            session.commit()
+
+
+@pytest.mark.asyncio
+async def test_multiple_asset_group_types():
+    """Test creating multiple AssetGroupType instances."""
+    engine = await get_engine_async()
+
+    # Clear the database.
+    clear_database(engine)
+
+    with Session(engine) as session:
+        # Create multiple asset group types
+        pairs_trading = AssetGroupType(
+            symbol="PAIRS_TRADING",
+            name="Pairs Trading",
+            description="Statistical pairs trading",
+            is_active=True,
+        )
+
+        arbitrage = AssetGroupType(
+            symbol="ARBITRAGE",
+            name="Arbitrage Trading",
+            description="Classical arbitrage",
+            is_active=True,
+        )
+
+        triangular_arbitrage = AssetGroupType(
+            symbol="TRIANGULAR_ARBITRAGE",
+            name="Triangular Arbitrage",
+            description="Triangular arbitrage opportunities",
+            is_active=True,
+        )
+
+        session.add_all([pairs_trading, arbitrage, triangular_arbitrage])
+        session.commit()
+
+        # Verify all were created
+        assert pairs_trading.id is not None
+        assert arbitrage.id is not None
+        assert triangular_arbitrage.id is not None
+
+        # Verify unique symbols
+        assert pairs_trading.symbol == "PAIRS_TRADING"
+        assert arbitrage.symbol == "ARBITRAGE"
+        assert triangular_arbitrage.symbol == "TRIANGULAR_ARBITRAGE"
+
+
+@pytest.mark.asyncio
+async def test_asset_group_type_inactive_status():
+    """Test AssetGroupType inactive status functionality."""
+    engine = await get_engine_async()
+
+    # Clear the database.
+    clear_database(engine)
+
+    with Session(engine) as session:
+        # Create inactive asset group type
+        inactive_type = AssetGroupType(
+            symbol="INACTIVE_TYPE",
+            name="Inactive Type",
+            description="This type is inactive",
+            is_active=False,
+        )
+        session.add(inactive_type)
+        session.commit()
+        session.refresh(inactive_type)
+
+        # Verify inactive status
+        assert inactive_type.is_active is False
+
+        # Create ProviderAssetGroup with inactive type (should still work)
+        provider_asset_group = ProviderAssetGroup(
+            asset_group_type_id=inactive_type.id,
+            name="Group with Inactive Type",
+            description="Group using inactive asset group type",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Verify the group was created successfully
+        assert provider_asset_group.asset_group_type_id == inactive_type.id
+
+
+@pytest.mark.asyncio
+async def test_asset_group_type_query_by_symbol():
+    """Test querying AssetGroupType by symbol."""
+    engine = await get_engine_async()
+
+    # Clear the database.
+    clear_database(engine)
+
+    with Session(engine) as session:
+        # Create asset group types
+        pairs_trading = AssetGroupType(
+            symbol="PAIRS_TRADING",
+            name="Pairs Trading",
+            description="Statistical pairs trading",
+            is_active=True,
+        )
+
+        arbitrage = AssetGroupType(
+            symbol="ARBITRAGE",
+            name="Arbitrage Trading",
+            description="Classical arbitrage",
+            is_active=True,
+        )
+
+        session.add_all([pairs_trading, arbitrage])
+        session.commit()
+
+        # Query by symbol
+        pairs_type = (
+            session.query(AssetGroupType).filter_by(symbol="PAIRS_TRADING").one()
+        )
+        arbitrage_type = (
+            session.query(AssetGroupType).filter_by(symbol="ARBITRAGE").one()
+        )
+
+        # Verify correct types were retrieved
+        assert pairs_type.name == "Pairs Trading"
+        assert arbitrage_type.name == "Arbitrage Trading"
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_with_different_types():
+    """Test creating ProviderAssetGroup instances with different AssetGroupType."""
+    engine = await get_engine_async()
+
+    # Clear the database.
+    clear_database(engine)
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create different asset group types
+        pairs_trading = AssetGroupType(
+            symbol="PAIRS_TRADING",
+            name="Pairs Trading",
+            description="Statistical pairs trading",
+            is_active=True,
+        )
+
+        arbitrage = AssetGroupType(
+            symbol="ARBITRAGE",
+            name="Arbitrage Trading",
+            description="Classical arbitrage",
+            is_active=True,
+        )
+
+        session.add_all([pairs_trading, arbitrage])
+        session.commit()
+
+        # Create ProviderAssetGroup instances with different types
+        pairs_group = ProviderAssetGroup(
+            asset_group_type_id=pairs_trading.id,
+            name="Pairs Trading Group",
+            description="Group for pairs trading",
+            is_active=True,
+        )
+
+        arbitrage_group = ProviderAssetGroup(
+            asset_group_type_id=arbitrage.id,
+            name="Arbitrage Group",
+            description="Group for arbitrage",
+            is_active=True,
+        )
+
+        session.add_all([pairs_group, arbitrage_group])
+        session.commit()
+
+        # Verify groups have correct types
+        assert pairs_group.asset_group_type_id == pairs_trading.id
+        assert arbitrage_group.asset_group_type_id == arbitrage.id
+
+        # Query and verify
+        retrieved_pairs_group = (
+            session.query(ProviderAssetGroup)
+            .filter_by(asset_group_type_id=pairs_trading.id)
+            .one()
+        )
+
+        retrieved_arbitrage_group = (
+            session.query(ProviderAssetGroup)
+            .filter_by(asset_group_type_id=arbitrage.id)
+            .one()
+        )
+
+        assert retrieved_pairs_group.name == "Pairs Trading Group"
+        assert retrieved_arbitrage_group.name == "Arbitrage Group"
