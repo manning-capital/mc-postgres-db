@@ -2,7 +2,7 @@ import datetime
 from typing import Optional
 
 from sqlalchemy import Engine, ForeignKey, MetaData, String, func, select
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -582,6 +582,13 @@ class ProviderAssetGroup(Base):
     description: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True, comment="The description of the asset group"
     )
+    # ORM relationship to access members as a list
+    members: Mapped[list["ProviderAssetGroupMember"]] = relationship(
+        "ProviderAssetGroupMember",
+        back_populates="group",
+        cascade="all, delete-orphan",
+        order_by="ProviderAssetGroupMember.order.asc()",
+    )
     is_active: Mapped[bool] = mapped_column(
         default=True, comment="Whether the asset group is active"
     )
@@ -631,14 +638,20 @@ class ProviderAssetGroupMember(Base):
         nullable=False,
         comment="The identifier of the to asset (quote asset)",
     )
-    order: Mapped[Optional[int]] = mapped_column(
-        nullable=True,
-        comment="The order of the asset pair within the group (1, 2, 3, etc.). If null, no specific order is assigned.",
+    order: Mapped[int] = mapped_column(
+        nullable=False,
+        comment="The order of the asset pair within the group (1, 2, 3, etc.). Required field for sequencing members within the group.",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
         comment="The timestamp of the creation of the asset group member",
+    )
+
+    # ORM relationship back to the group
+    group: Mapped["ProviderAssetGroup"] = relationship(
+        "ProviderAssetGroup",
+        back_populates="members",
     )
 
     def __repr__(self):

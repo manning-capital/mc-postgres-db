@@ -131,12 +131,14 @@ async def test_create_provider_asset_group_attribute():
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
+            order=1,
         )
         provider_asset_group_member_2 = ProviderAssetGroupMember(
             provider_asset_group_id=provider_asset_group.id,
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=eth_asset.id,
+            order=2,
         )
         session.add(provider_asset_group_member_1)
         session.add(provider_asset_group_member_2)
@@ -208,12 +210,14 @@ async def test_create_provider_asset_group_with_members():
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
+            order=1,
         )
         member2 = ProviderAssetGroupMember(
             provider_asset_group_id=provider_asset_group.id,
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=eth_asset.id,
+            order=2,
         )
         session.add_all([member1, member2])
         session.commit()
@@ -262,6 +266,7 @@ async def test_composite_primary_key_constraint():
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
+            order=1,
         )
         session.add(member)
         session.commit()
@@ -272,6 +277,7 @@ async def test_composite_primary_key_constraint():
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
+            order=1,  # Same composite key (order is not part of primary key)
         )
         session.add(duplicate_member)
 
@@ -412,12 +418,14 @@ async def test_multiple_providers_same_asset_group():
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
+            order=1,
         )
         member2 = ProviderAssetGroupMember(
             provider_asset_group_id=provider_asset_group.id,
             provider_id=provider2.id,
             from_asset_id=usd_asset.id,
             to_asset_id=eth_asset.id,
+            order=2,
         )
         session.add_all([member1, member2])
         session.commit()
@@ -518,6 +526,7 @@ async def test_asset_group_member_relationships():
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
+            order=1,
         )
         session.add(member)
         session.commit()
@@ -645,39 +654,35 @@ async def test_provider_asset_group_member_ordering():
         assert ordered_members[1].order == 2
         assert ordered_members[1].to_asset_id == eth_asset.id
 
-        # Test mixed ordering (some with order, some without)
+        # Test adding a third member with order
         member3 = ProviderAssetGroupMember(
             provider_asset_group_id=provider_asset_group.id,
             provider_id=provider.id,
             from_asset_id=btc_asset.id,
             to_asset_id=eth_asset.id,
-            order=None,  # No order specified
+            order=3,  # Order is now required
         )
         session.add(member3)
         session.commit()
 
-        # Query with null handling - ordered items first, then unordered
-        mixed_members = (
+        # Query all members - all should be ordered
+        all_members = (
             session.query(ProviderAssetGroupMember)
             .filter_by(provider_asset_group_id=provider_asset_group.id)
-            .order_by(
-                ProviderAssetGroupMember.order.asc().nulls_last(),
-                ProviderAssetGroupMember.to_asset_id.asc(),
-            )
+            .order_by(ProviderAssetGroupMember.order.asc())
             .all()
         )
 
-        assert len(mixed_members) == 3
-        # First two should be ordered
-        assert mixed_members[0].order == 1
-        assert mixed_members[1].order == 2
-        # Last one should be unordered (null)
-        assert mixed_members[2].order is None
+        assert len(all_members) == 3
+        # All should be ordered
+        assert all_members[0].order == 1
+        assert all_members[1].order == 2
+        assert all_members[2].order == 3
 
 
 @pytest.mark.asyncio
-async def test_provider_asset_group_member_no_ordering():
-    """Test ProviderAssetGroupMember without any ordering."""
+async def test_provider_asset_group_member_required_ordering():
+    """Test that ProviderAssetGroupMember requires an order value."""
     engine = await get_engine_async()
 
     # Create base data
@@ -688,40 +693,373 @@ async def test_provider_asset_group_member_no_ordering():
     with Session(engine) as session:
         # Create a ProviderAssetGroup
         provider_asset_group = ProviderAssetGroup(
-            name="Unordered Test Group",
-            description="Testing no ordering",
+            name="Required Order Test Group",
+            description="Testing required ordering",
             is_active=True,
         )
         session.add(provider_asset_group)
         session.commit()
         session.refresh(provider_asset_group)
 
-        # Add members without ordering
+        # Add members with required ordering
         member1 = ProviderAssetGroupMember(
             provider_asset_group_id=provider_asset_group.id,
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
-            order=None,
+            order=1,  # Order is now required
         )
         member2 = ProviderAssetGroupMember(
             provider_asset_group_id=provider_asset_group.id,
             provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=eth_asset.id,
-            order=None,
+            order=2,  # Order is now required
         )
         session.add_all([member1, member2])
         session.commit()
 
-        # Verify no ordering
-        unordered_members = (
+        # Verify ordering is required and works
+        ordered_members = (
             session.query(ProviderAssetGroupMember)
             .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .order_by(ProviderAssetGroupMember.order.asc())
             .all()
         )
 
-        assert len(unordered_members) == 2
-        # Both should have null order
-        for member in unordered_members:
-            assert member.order is None
+        assert len(ordered_members) == 2
+        # Both should have order values
+        assert ordered_members[0].order == 1
+        assert ordered_members[1].order == 2
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_orm_relationship():
+    """Test the ORM relationship between ProviderAssetGroup and ProviderAssetGroupMember."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="ORM Test Group",
+            description="Testing ORM relationships",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add members to the group
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=1,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+            order=2,
+        )
+        session.add_all([member1, member2])
+        session.commit()
+
+        # Test accessing members through the ORM relationship
+        # Refresh the group to ensure relationships are loaded
+        session.refresh(provider_asset_group)
+        
+        # Access members as a list
+        members = provider_asset_group.members
+        assert len(members) == 2
+        
+        # Verify ordering works through the relationship
+        assert members[0].order == 1
+        assert members[0].to_asset_id == btc_asset.id
+        assert members[1].order == 2
+        assert members[1].to_asset_id == eth_asset.id
+        
+        # Test reverse relationship
+        assert member1.group.id == provider_asset_group.id
+        assert member1.group.name == "ORM Test Group"
+        assert member2.group.id == provider_asset_group.id
+        
+        # Test adding members through the relationship
+        member3 = ProviderAssetGroupMember(
+            provider_id=provider.id,
+            from_asset_id=btc_asset.id,
+            to_asset_id=eth_asset.id,
+            order=3,
+        )
+        provider_asset_group.members.append(member3)
+        session.commit()
+        
+        # Verify the new member was added
+        session.refresh(provider_asset_group)
+        assert len(provider_asset_group.members) == 3
+        assert provider_asset_group.members[2].order == 3
+        assert provider_asset_group.members[2].to_asset_id == eth_asset.id
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_cascade_delete():
+    """Test that deleting a ProviderAssetGroup cascades to its members."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup with members
+        provider_asset_group = ProviderAssetGroup(
+            name="Cascade Test Group",
+            description="Testing cascade delete",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add members
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=1,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+            order=2,
+        )
+        session.add_all([member1, member2])
+        session.commit()
+
+        # Verify members exist
+        members_before = session.query(ProviderAssetGroupMember).filter_by(
+            provider_asset_group_id=provider_asset_group.id
+        ).all()
+        assert len(members_before) == 2
+
+        # Delete the group
+        session.delete(provider_asset_group)
+        session.commit()
+
+        # Verify members were cascade deleted
+        members_after = session.query(ProviderAssetGroupMember).filter_by(
+            provider_asset_group_id=provider_asset_group.id
+        ).all()
+        assert len(members_after) == 0
+
+
+@pytest.mark.asyncio
+async def test_orm_member_retrieval_basic():
+    """Test basic retrieval of members through ProviderAssetGroup ORM relationship."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Basic ORM Test Group",
+            description="Testing basic ORM member retrieval",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add multiple members with different orders
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=1,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+            order=2,
+        )
+        member3 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=btc_asset.id,
+            to_asset_id=eth_asset.id,
+            order=3,
+        )
+        session.add_all([member1, member2, member3])
+        session.commit()
+
+        # Query the group and access members through ORM relationship
+        retrieved_group = session.query(ProviderAssetGroup).filter_by(
+            id=provider_asset_group.id
+        ).one()
+        
+        # Access members through the ORM relationship
+        members = retrieved_group.members
+        
+        # Verify we got all members
+        assert len(members) == 3
+        
+        # Verify members are ordered correctly (due to order_by in relationship)
+        assert members[0].order == 1
+        assert members[1].order == 2
+        assert members[2].order == 3
+        
+        # Verify member details
+        assert members[0].from_asset_id == usd_asset.id
+        assert members[0].to_asset_id == btc_asset.id
+        assert members[1].from_asset_id == usd_asset.id
+        assert members[1].to_asset_id == eth_asset.id
+        assert members[2].from_asset_id == btc_asset.id
+        assert members[2].to_asset_id == eth_asset.id
+
+
+@pytest.mark.asyncio
+async def test_orm_multiple_groups_member_isolation():
+    """Test that multiple groups maintain separate member collections."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create first group with multiple members
+        provider_asset_group_1 = ProviderAssetGroup(
+            name="First ORM Test Group",
+            description="Testing multiple groups - first",
+            is_active=True,
+        )
+        session.add(provider_asset_group_1)
+        session.commit()
+        session.refresh(provider_asset_group_1)
+
+        # Add multiple members to first group
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group_1.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=1,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group_1.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+            order=2,
+        )
+        session.add_all([member1, member2])
+        session.commit()
+
+        # Create second group with single member
+        provider_asset_group_2 = ProviderAssetGroup(
+            name="Second ORM Test Group",
+            description="Testing multiple groups - second",
+            is_active=True,
+        )
+        session.add(provider_asset_group_2)
+        session.commit()
+        session.refresh(provider_asset_group_2)
+
+        # Add one member to the second group
+        member3 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group_2.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=1,
+        )
+        session.add(member3)
+        session.commit()
+
+        # Query both groups
+        groups = session.query(ProviderAssetGroup).filter(
+            ProviderAssetGroup.id.in_([provider_asset_group_1.id, provider_asset_group_2.id])
+        ).all()
+        
+        # Verify each group has the correct number of members
+        group1 = next(g for g in groups if g.id == provider_asset_group_1.id)
+        group2 = next(g for g in groups if g.id == provider_asset_group_2.id)
+        
+        assert len(group1.members) == 2
+        assert len(group2.members) == 1
+        
+        # Verify the single member in group2
+        assert group2.members[0].from_asset_id == usd_asset.id
+        assert group2.members[0].to_asset_id == btc_asset.id
+        assert group2.members[0].order == 1
+        
+        # Verify members in group1
+        assert group1.members[0].order == 1
+        assert group1.members[1].order == 2
+
+
+@pytest.mark.asyncio
+async def test_orm_bidirectional_relationship():
+    """Test that bidirectional relationship works between ProviderAssetGroup and ProviderAssetGroupMember."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Bidirectional Test Group",
+            description="Testing bidirectional relationship",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add a member
+        member = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+            order=1,
+        )
+        session.add(member)
+        session.commit()
+
+        # Test forward relationship: group -> members
+        retrieved_group = session.query(ProviderAssetGroup).filter_by(
+            id=provider_asset_group.id
+        ).one()
+        
+        assert len(retrieved_group.members) == 1
+        assert retrieved_group.members[0].order == 1
+        
+        # Test backward relationship: member -> group
+        first_member = retrieved_group.members[0]
+        assert first_member.group.id == provider_asset_group.id
+        assert first_member.group.name == "Bidirectional Test Group"
+        assert first_member.group.description == "Testing bidirectional relationship"
+        assert first_member.group.is_active is True
