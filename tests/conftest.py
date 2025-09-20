@@ -5,6 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
 
 import pytest
+
 from mc_postgres_db.testing.utilities import postgres_test_harness
 
 

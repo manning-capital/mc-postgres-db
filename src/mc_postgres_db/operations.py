@@ -1,8 +1,9 @@
+from typing import Callable, Literal
+
 import pandas as pd
-from sqlalchemy import Engine
-from typing import Literal, Callable
+from sqlalchemy import Connection, Engine
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import Connection
+
 from mc_postgres_db.models import Base
 
 

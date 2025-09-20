@@ -1,8 +1,7 @@
 import datetime
 from typing import Optional
-from sqlalchemy import MetaData
 
-from sqlalchemy import Engine, ForeignKey, String, func, select
+from sqlalchemy import Engine, ForeignKey, MetaData, String, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 
