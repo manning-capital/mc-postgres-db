@@ -67,7 +67,9 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
         print(f"URL netloc: {prefect_api_url.netloc}")
         valid_hostnames = ["localhost", "127.0.0.1"]
         if prefect_api_url.hostname not in valid_hostnames:
-            raise ValueError("The PREFECT_API_URL environment variable has it's hostname set to something other than localhost")
+            raise ValueError(
+                "The PREFECT_API_URL environment variable has it's hostname set to something other than localhost"
+            )
 
         # Set the postgres-url secret to the URL of the SQLite database.
         Secret(value=database_url).save("postgres-url")  # type: ignore
@@ -79,7 +81,9 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
 
         # Check if the secret is the same as the database URL.
         if postgres_url_secret != database_url:
-            raise ValueError("The postgres-url secret is not the same as the database URL.")
+            raise ValueError(
+                "The postgres-url secret is not the same as the database URL."
+            )
 
         yield
 

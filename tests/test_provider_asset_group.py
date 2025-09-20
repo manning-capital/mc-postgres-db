@@ -1164,7 +1164,7 @@ async def test_asset_group_type_creation():
 async def test_asset_group_type_unique_symbol():
     """Test that AssetGroupType symbol must be unique."""
     engine = await get_engine_async()
-    
+
     # Clear the database.
     clear_database(engine)
 
@@ -1251,6 +1251,7 @@ async def test_provider_asset_group_requires_asset_group_type():
         # Should raise an IntegrityError due to foreign key constraint
         with pytest.raises(Exception):
             session.commit()
+
 
 @pytest.mark.asyncio
 async def test_multiple_asset_group_types():
@@ -1379,7 +1380,7 @@ async def test_asset_group_type_query_by_symbol():
 async def test_provider_asset_group_with_different_types():
     """Test creating ProviderAssetGroup instances with different AssetGroupType."""
     engine = await get_engine_async()
-    
+
     # Clear the database.
     clear_database(engine)
 
