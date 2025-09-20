@@ -1,8 +1,7 @@
 import datetime
 from typing import Optional
-from sqlalchemy import MetaData
 
-from sqlalchemy import Engine, ForeignKey, String, func, select
+from sqlalchemy import Engine, ForeignKey, MetaData, String, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 
@@ -568,10 +567,10 @@ class AssetContent(Base):
     )
 
 
-class AssetGroup(Base):
-    __tablename__ = "asset_group"
+class ProviderAssetGroup(Base):
+    __tablename__ = "provider_asset_group"
     __table_args__ = {
-        "comment": "The asset group, will store groups of assets that share common attributes."
+        "comment": "Groups provider assets for calculating aggregated statistical values between members. Each group contains provider asset pairs that share statistical relationships for cointegration analysis, mean reversion modeling, and linear regression calculations."
     }
 
     id: Mapped[int] = mapped_column(
@@ -599,20 +598,26 @@ class AssetGroup(Base):
     )
 
     def __repr__(self):
-        return f"{AssetGroup.__name__}({self.id}, {self.name})"
+        return f"{ProviderAssetGroup.__name__}({self.id}, {self.name})"
 
 
-class AssetGroupMember(Base):
-    __tablename__ = "asset_group_member"
+class ProviderAssetGroupMember(Base):
+    __tablename__ = "provider_asset_group_member"
     __table_args__ = {
-        "comment": "The asset group member, will store pairs of assets that belong to groups for pairs trading."
+        "comment": "Maps provider asset pairs to statistical groups for aggregated calculations. Each record represents a pair of assets (from_asset_id, to_asset_id) from a specific provider that belong to a statistical group. Optional order field allows sequencing within groups for hierarchical analysis."
     }
 
-    asset_group_id: Mapped[int] = mapped_column(
-        ForeignKey("asset_group.id"),
+    provider_asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("provider_asset_group.id"),
         primary_key=True,
         nullable=False,
-        comment="The identifier of the asset group",
+        comment="The identifier of the provider asset group",
+    )
+    provider_id: Mapped[int] = mapped_column(
+        ForeignKey("provider.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the provider",
     )
     from_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
@@ -626,6 +631,10 @@ class AssetGroupMember(Base):
         nullable=False,
         comment="The identifier of the to asset (quote asset)",
     )
+    order: Mapped[Optional[int]] = mapped_column(
+        nullable=True,
+        comment="The order of the asset pair within the group (1, 2, 3, etc.). If null, no specific order is assigned.",
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
@@ -633,13 +642,13 @@ class AssetGroupMember(Base):
     )
 
     def __repr__(self):
-        return f"{AssetGroupMember.__name__}(asset_group_id={self.asset_group_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id})"
+        return f"{ProviderAssetGroupMember.__name__}(provider_asset_group_id={self.provider_asset_group_id}, provider_id={self.provider_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id})"
 
 
 class ProviderAssetGroupAttribute(Base):
     __tablename__ = "provider_asset_group_attribute"
     __table_args__ = {
-        "comment": "The provider asset group attribute, will store shared attributes for asset groups from providers such as cointegration p-value and OL process parameters."
+        "comment": "Stores aggregated statistical calculations for provider asset groups across multiple time windows. Contains cointegration analysis results, Ornstein-Uhlenbeck process parameters for mean reversion modeling, and comprehensive linear regression statistics including coefficients, fit measures, and significance tests."
     }
 
     timestamp: Mapped[datetime.datetime] = mapped_column(
@@ -647,17 +656,11 @@ class ProviderAssetGroupAttribute(Base):
         primary_key=True,
         comment="The timestamp of the provider asset group attributes",
     )
-    provider_id: Mapped[int] = mapped_column(
-        ForeignKey("provider.id"),
+    provider_asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("provider_asset_group.id"),
         nullable=False,
         primary_key=True,
-        comment="The identifier of the provider",
-    )
-    asset_group_id: Mapped[int] = mapped_column(
-        ForeignKey("asset_group.id"),
-        nullable=False,
-        primary_key=True,
-        comment="The identifier of the asset group",
+        comment="The identifier of the provider asset group",
     )
     lookback_window_seconds: Mapped[int] = mapped_column(
         nullable=False,
@@ -702,4 +705,4 @@ class ProviderAssetGroupAttribute(Base):
     )
 
     def __repr__(self):
-        return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_id={self.provider_id}, asset_group_id={self.asset_group_id})"
+        return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_asset_group_id={self.provider_asset_group_id})"

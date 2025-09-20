@@ -3,15 +3,16 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
 
-from sqlalchemy.orm import Session
 from sqlalchemy import Engine
-from mc_postgres_db.testing.utilities import clear_database
+from sqlalchemy.orm import Session
+
 from mc_postgres_db.models import (
-    AssetType,
     Asset,
-    ProviderType,
+    AssetType,
     Provider,
+    ProviderType,
 )
+from mc_postgres_db.testing.utilities import clear_database
 
 
 def create_base_data(

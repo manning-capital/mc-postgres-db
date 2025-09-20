@@ -1,11 +1,13 @@
+import logging
 import os
 import tempfile
-import mc_postgres_db.models as models
-from sqlalchemy import create_engine, Engine
 from contextlib import contextmanager
+
 from prefect.blocks.system import Secret
 from prefect.testing.utilities import prefect_test_harness
-import logging
+from sqlalchemy import Engine, create_engine
+
+import mc_postgres_db.models as models
 
 LOGGER = logging.getLogger(__name__)
 

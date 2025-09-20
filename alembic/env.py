@@ -5,13 +5,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from mc_postgres_db.models import Base  # Import your SQLAlchemy Base class
-from dotenv import load_dotenv
 
 load_dotenv()  # Load environment variables from .env file
 
