@@ -605,7 +605,7 @@ class AssetGroup(Base):
 class AssetGroupMember(Base):
     __tablename__ = "asset_group_member"
     __table_args__ = {
-        "comment": "The asset group member, will store which assets belong to which groups."
+        "comment": "The asset group member, will store pairs of assets that belong to groups for pairs trading."
     }
 
     asset_group_id: Mapped[int] = mapped_column(
@@ -614,15 +614,17 @@ class AssetGroupMember(Base):
         nullable=False,
         comment="The identifier of the asset group",
     )
-    asset_id: Mapped[int] = mapped_column(
+    from_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         primary_key=True,
         nullable=False,
-        comment="The identifier of the asset",
+        comment="The identifier of the from asset (base asset)",
     )
-    order: Mapped[Optional[int]] = mapped_column(
-        nullable=True,
-        comment="The order of the asset within the group (optional)",
+    to_asset_id: Mapped[int] = mapped_column(
+        ForeignKey("asset.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the to asset (quote asset)",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
@@ -631,7 +633,7 @@ class AssetGroupMember(Base):
     )
 
     def __repr__(self):
-        return f"{AssetGroupMember.__name__}(asset_group_id={self.asset_group_id}, asset_id={self.asset_id})"
+        return f"{AssetGroupMember.__name__}(asset_group_id={self.asset_group_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id})"
 
 
 class ProviderAssetGroupAttribute(Base):
@@ -680,15 +682,15 @@ class ProviderAssetGroupAttribute(Base):
     )
     linear_fit_alpha: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The alpha parameter (intercept) for the linear fit equation y = alpha + beta * X, where X is the first asset in the group (order matters)",
+        comment="The alpha parameter (intercept) for the linear fit equation to_asset = alpha + beta * from_asset",
     )
     linear_fit_beta: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The beta parameter (slope) for the linear fit equation y = alpha + beta * X, where X is the first asset in the group (order matters)",
+        comment="The beta parameter (slope) for the linear fit equation to_asset = alpha + beta * from_asset",
     )
     linear_fit_mse: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The mean squared error (MSE) of the linear fit between the first asset (X) and the second asset (Y) in the group. Asset order in the group determines which asset is used as the independent variable.",
+        comment="The mean squared error (MSE) of the linear fit between the from_asset (independent variable) and to_asset (dependent variable) in the asset group pair",
     )
 
     def __repr__(self):

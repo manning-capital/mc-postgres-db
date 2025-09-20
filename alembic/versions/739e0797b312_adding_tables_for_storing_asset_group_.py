@@ -1,8 +1,8 @@
 """Adding tables for storing asset group attributes
 
-Revision ID: f0c8358fd98c
+Revision ID: 739e0797b312
 Revises: 0363c25292b7
-Create Date: 2025-09-20 08:56:55.514332
+Create Date: 2025-09-20 09:00:49.771524
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f0c8358fd98c'
+revision: str = '739e0797b312'
 down_revision: Union[str, Sequence[str], None] = '0363c25292b7'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,13 +33,14 @@ def upgrade() -> None:
     )
     op.create_table('asset_group_member',
     sa.Column('asset_group_id', sa.Integer(), nullable=False, comment='The identifier of the asset group'),
-    sa.Column('asset_id', sa.Integer(), nullable=False, comment='The identifier of the asset'),
-    sa.Column('order', sa.Integer(), nullable=True, comment='The order of the asset within the group (optional)'),
+    sa.Column('from_asset_id', sa.Integer(), nullable=False, comment='The identifier of the from asset (base asset)'),
+    sa.Column('to_asset_id', sa.Integer(), nullable=False, comment='The identifier of the to asset (quote asset)'),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False, comment='The timestamp of the creation of the asset group member'),
     sa.ForeignKeyConstraint(['asset_group_id'], ['asset_group.id'], ),
-    sa.ForeignKeyConstraint(['asset_id'], ['asset.id'], ),
-    sa.PrimaryKeyConstraint('asset_group_id', 'asset_id', name=op.f('asset_group_member_pkey')),
-    comment='The asset group member, will store which assets belong to which groups.'
+    sa.ForeignKeyConstraint(['from_asset_id'], ['asset.id'], ),
+    sa.ForeignKeyConstraint(['to_asset_id'], ['asset.id'], ),
+    sa.PrimaryKeyConstraint('asset_group_id', 'from_asset_id', 'to_asset_id', name=op.f('asset_group_member_pkey')),
+    comment='The asset group member, will store pairs of assets that belong to groups for pairs trading.'
     )
     op.create_table('provider_asset_group_attribute',
     sa.Column('timestamp', sa.DateTime(), nullable=False, comment='The timestamp of the provider asset group attributes'),
@@ -50,9 +51,9 @@ def upgrade() -> None:
     sa.Column('ol_mu', sa.Float(), nullable=True, comment='The mu parameter for the Ornstein-Uhlenbeck process'),
     sa.Column('ol_theta', sa.Float(), nullable=True, comment='The theta parameter for the Ornstein-Uhlenbeck process'),
     sa.Column('ol_sigma', sa.Float(), nullable=True, comment='The sigma parameter for the Ornstein-Uhlenbeck process'),
-    sa.Column('linear_fit_alpha', sa.Float(), nullable=True, comment='The alpha parameter (intercept) for the linear fit equation y = alpha + beta * X, where X is the first asset in the group (order matters)'),
-    sa.Column('linear_fit_beta', sa.Float(), nullable=True, comment='The beta parameter (slope) for the linear fit equation y = alpha + beta * X, where X is the first asset in the group (order matters)'),
-    sa.Column('linear_fit_mse', sa.Float(), nullable=True, comment='The mean squared error (MSE) of the linear fit between the first asset (X) and the second asset (Y) in the group. Asset order in the group determines which asset is used as the independent variable.'),
+    sa.Column('linear_fit_alpha', sa.Float(), nullable=True, comment='The alpha parameter (intercept) for the linear fit equation to_asset = alpha + beta * from_asset'),
+    sa.Column('linear_fit_beta', sa.Float(), nullable=True, comment='The beta parameter (slope) for the linear fit equation to_asset = alpha + beta * from_asset'),
+    sa.Column('linear_fit_mse', sa.Float(), nullable=True, comment='The mean squared error (MSE) of the linear fit between the from_asset (independent variable) and to_asset (dependent variable) in the asset group pair'),
     sa.ForeignKeyConstraint(['asset_group_id'], ['asset_group.id'], ),
     sa.ForeignKeyConstraint(['provider_id'], ['provider.id'], ),
     sa.PrimaryKeyConstraint('timestamp', 'provider_id', 'asset_group_id', 'lookback_window_seconds', name=op.f('provider_asset_group_attribute_pkey')),
