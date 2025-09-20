@@ -775,22 +775,22 @@ async def test_provider_asset_group_orm_relationship():
         # Test accessing members through the ORM relationship
         # Refresh the group to ensure relationships are loaded
         session.refresh(provider_asset_group)
-        
+
         # Access members as a list
         members = provider_asset_group.members
         assert len(members) == 2
-        
+
         # Verify ordering works through the relationship
         assert members[0].order == 1
         assert members[0].to_asset_id == btc_asset.id
         assert members[1].order == 2
         assert members[1].to_asset_id == eth_asset.id
-        
+
         # Test reverse relationship
         assert member1.group.id == provider_asset_group.id
         assert member1.group.name == "ORM Test Group"
         assert member2.group.id == provider_asset_group.id
-        
+
         # Test adding members through the relationship
         member3 = ProviderAssetGroupMember(
             provider_id=provider.id,
@@ -800,7 +800,7 @@ async def test_provider_asset_group_orm_relationship():
         )
         provider_asset_group.members.append(member3)
         session.commit()
-        
+
         # Verify the new member was added
         session.refresh(provider_asset_group)
         assert len(provider_asset_group.members) == 3
@@ -848,9 +848,11 @@ async def test_provider_asset_group_cascade_delete():
         session.commit()
 
         # Verify members exist
-        members_before = session.query(ProviderAssetGroupMember).filter_by(
-            provider_asset_group_id=provider_asset_group.id
-        ).all()
+        members_before = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .all()
+        )
         assert len(members_before) == 2
 
         # Delete the group
@@ -858,9 +860,11 @@ async def test_provider_asset_group_cascade_delete():
         session.commit()
 
         # Verify members were cascade deleted
-        members_after = session.query(ProviderAssetGroupMember).filter_by(
-            provider_asset_group_id=provider_asset_group.id
-        ).all()
+        members_after = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .all()
+        )
         assert len(members_after) == 0
 
 
@@ -911,21 +915,23 @@ async def test_orm_member_retrieval_basic():
         session.commit()
 
         # Query the group and access members through ORM relationship
-        retrieved_group = session.query(ProviderAssetGroup).filter_by(
-            id=provider_asset_group.id
-        ).one()
-        
+        retrieved_group = (
+            session.query(ProviderAssetGroup)
+            .filter_by(id=provider_asset_group.id)
+            .one()
+        )
+
         # Access members through the ORM relationship
         members = retrieved_group.members
-        
+
         # Verify we got all members
         assert len(members) == 3
-        
+
         # Verify members are ordered correctly (due to order_by in relationship)
         assert members[0].order == 1
         assert members[1].order == 2
         assert members[2].order == 3
-        
+
         # Verify member details
         assert members[0].from_asset_id == usd_asset.id
         assert members[0].to_asset_id == btc_asset.id
@@ -996,22 +1002,28 @@ async def test_orm_multiple_groups_member_isolation():
         session.commit()
 
         # Query both groups
-        groups = session.query(ProviderAssetGroup).filter(
-            ProviderAssetGroup.id.in_([provider_asset_group_1.id, provider_asset_group_2.id])
-        ).all()
-        
+        groups = (
+            session.query(ProviderAssetGroup)
+            .filter(
+                ProviderAssetGroup.id.in_(
+                    [provider_asset_group_1.id, provider_asset_group_2.id]
+                )
+            )
+            .all()
+        )
+
         # Verify each group has the correct number of members
         group1 = next(g for g in groups if g.id == provider_asset_group_1.id)
         group2 = next(g for g in groups if g.id == provider_asset_group_2.id)
-        
+
         assert len(group1.members) == 2
         assert len(group2.members) == 1
-        
+
         # Verify the single member in group2
         assert group2.members[0].from_asset_id == usd_asset.id
         assert group2.members[0].to_asset_id == btc_asset.id
         assert group2.members[0].order == 1
-        
+
         # Verify members in group1
         assert group1.members[0].order == 1
         assert group1.members[1].order == 2
@@ -1050,13 +1062,15 @@ async def test_orm_bidirectional_relationship():
         session.commit()
 
         # Test forward relationship: group -> members
-        retrieved_group = session.query(ProviderAssetGroup).filter_by(
-            id=provider_asset_group.id
-        ).one()
-        
+        retrieved_group = (
+            session.query(ProviderAssetGroup)
+            .filter_by(id=provider_asset_group.id)
+            .one()
+        )
+
         assert len(retrieved_group.members) == 1
         assert retrieved_group.members[0].order == 1
-        
+
         # Test backward relationship: member -> group
         first_member = retrieved_group.members[0]
         assert first_member.group.id == provider_asset_group.id
