@@ -15,10 +15,11 @@ import statsmodels.api as sm
 from mc_postgres_db.prefect.tasks import set_data
 
 from mc_postgres_db.models import (
-    AssetGroup,
-    AssetGroupMember,
+    ProviderAssetGroup,
+    ProviderAssetGroupMember,
     ProviderAssetGroupAttribute,
     ProviderAssetMarket,
+    Provider,
 )
 from tests.utils import create_base_data
 
@@ -111,34 +112,36 @@ async def test_create_provider_asset_group_attribute():
         operation_type="upsert",
     )
 
-    # Create the asset group.
+    # Create the provider asset group.
     with Session(engine) as session:
-        asset_group = AssetGroup(
-            name="BTC/ETH Asset Group",
-            description="BTC/ETH Asset Group",
+        provider_asset_group = ProviderAssetGroup(
+            name="BTC (Kraken)/ETH (Kraken) Asset Group",
+            description="BTC (Kraken)/ETH (Kraken) Asset Group",
             is_active=True,
         )
-        session.add(asset_group)
+        session.add(provider_asset_group)
         session.commit()
-        session.refresh(asset_group)
+        session.refresh(provider_asset_group)
 
-    # Create the asset group member.
+    # Create the provider asset group members.
     with Session(engine) as session:
-        asset_group_member_1 = AssetGroupMember(
-            asset_group_id=asset_group.id,
+        provider_asset_group_member_1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=btc_asset.id,
         )
-        asset_group_member_2 = AssetGroupMember(
-            asset_group_id=asset_group.id,
+        provider_asset_group_member_2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
             from_asset_id=usd_asset.id,
             to_asset_id=eth_asset.id,
         )
-        session.add(asset_group_member_1)
-        session.add(asset_group_member_2)
+        session.add(provider_asset_group_member_1)
+        session.add(provider_asset_group_member_2)
         session.commit()
-        session.refresh(asset_group_member_1)
-        session.refresh(asset_group_member_2)
+        session.refresh(provider_asset_group_member_1)
+        session.refresh(provider_asset_group_member_2)
 
     # Pull the market data for the asset group.
     S_2 = fake_market_data_2["close"].to_numpy()
@@ -154,8 +157,7 @@ async def test_create_provider_asset_group_attribute():
     provider_asset_group_attribute_df = pd.DataFrame(
         {
             "timestamp": T,
-            "provider_id": len(T) * [provider.id],
-            "asset_group_id": len(T) * [asset_group.id],
+            "provider_asset_group_id": len(T) * [provider_asset_group.id],
             "lookback_window_seconds": len(T) * [window * 60],
         }
     )
@@ -176,3 +178,414 @@ async def test_create_provider_asset_group_attribute():
         provider_asset_group_attribute_df,
         operation_type="upsert",
     )
+
+
+@pytest.mark.asyncio
+async def test_create_provider_asset_group_with_members():
+    """Test creating a ProviderAssetGroup with multiple ProviderAssetGroupMember entries."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Test Crypto Group",
+            description="Test group for crypto pairs",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add members to the group
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+        )
+        session.add_all([member1, member2])
+        session.commit()
+
+        # Verify the group and its members
+        retrieved_group = (
+            session.query(ProviderAssetGroup)
+            .filter_by(id=provider_asset_group.id)
+            .one()
+        )
+        members = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .all()
+        )
+
+        assert len(members) == 2
+        assert retrieved_group.name == "Test Crypto Group"
+        assert retrieved_group.is_active is True
+
+
+@pytest.mark.asyncio
+async def test_composite_primary_key_constraint():
+    """Test that composite primary key constraints prevent duplicate entries."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Test Group",
+            description="Test group",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add a member
+        member = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+        )
+        session.add(member)
+        session.commit()
+
+        # Attempt to add a duplicate member (same composite key)
+        duplicate_member = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+        )
+        session.add(duplicate_member)
+
+        # Should raise an IntegrityError
+        with pytest.raises(
+            Exception
+        ):  # SQLite raises Exception, PostgreSQL would raise IntegrityError
+            session.commit()
+        session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_provider_asset_group_attributes():
+    """Test creating and retrieving ProviderAssetGroupAttribute entries."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Test Group",
+            description="Test group",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Create attributes for different timestamps and lookback windows
+        timestamp1 = dt.datetime.now()
+        timestamp2 = timestamp1 + dt.timedelta(hours=1)
+
+        attribute1 = ProviderAssetGroupAttribute(
+            timestamp=timestamp1,
+            provider_asset_group_id=provider_asset_group.id,
+            lookback_window_seconds=3600,  # 1 hour
+            cointegration_p_value=0.05,
+            ol_mu=0.1,
+            ol_theta=0.5,
+            ol_sigma=0.2,
+            linear_fit_alpha=1.0,
+            linear_fit_beta=0.8,
+            linear_fit_mse=0.01,
+            linear_fit_r_squared=0.95,
+            linear_fit_r_squared_adj=0.94,
+        )
+
+        attribute2 = ProviderAssetGroupAttribute(
+            timestamp=timestamp2,
+            provider_asset_group_id=provider_asset_group.id,
+            lookback_window_seconds=7200,  # 2 hours
+            cointegration_p_value=0.03,
+            ol_mu=0.08,
+            ol_theta=0.6,
+            ol_sigma=0.15,
+            linear_fit_alpha=1.1,
+            linear_fit_beta=0.75,
+            linear_fit_mse=0.008,
+            linear_fit_r_squared=0.97,
+            linear_fit_r_squared_adj=0.96,
+        )
+
+        session.add_all([attribute1, attribute2])
+        session.commit()
+
+        # Retrieve attributes
+        retrieved_attr1 = (
+            session.query(ProviderAssetGroupAttribute)
+            .filter_by(
+                provider_asset_group_id=provider_asset_group.id,
+                lookback_window_seconds=3600,
+                timestamp=timestamp1,
+            )
+            .one()
+        )
+
+        retrieved_attr2 = (
+            session.query(ProviderAssetGroupAttribute)
+            .filter_by(
+                provider_asset_group_id=provider_asset_group.id,
+                lookback_window_seconds=7200,
+                timestamp=timestamp2,
+            )
+            .one()
+        )
+
+        # Verify attributes
+        assert retrieved_attr1.cointegration_p_value == 0.05
+        assert retrieved_attr1.ol_mu == 0.1
+        assert retrieved_attr1.linear_fit_alpha == 1.0
+        assert retrieved_attr1.linear_fit_r_squared == 0.95
+
+        assert retrieved_attr2.cointegration_p_value == 0.03
+        assert retrieved_attr2.ol_mu == 0.08
+        assert retrieved_attr2.linear_fit_alpha == 1.1
+        assert retrieved_attr2.linear_fit_r_squared == 0.97
+
+
+@pytest.mark.asyncio
+async def test_multiple_providers_same_asset_group():
+    """Test that multiple providers can have members in the same asset group."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a second provider
+        provider2 = Provider(
+            provider_type_id=provider_type.id,
+            name="Test Provider 2",
+            description="Second test provider",
+            is_active=True,
+        )
+        session.add(provider2)
+        session.commit()
+        session.refresh(provider2)
+
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Multi-Provider Group",
+            description="Group with multiple providers",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add members from different providers
+        member1 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+        )
+        member2 = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider2.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=eth_asset.id,
+        )
+        session.add_all([member1, member2])
+        session.commit()
+
+        # Verify both providers have members in the same group
+        members = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .all()
+        )
+
+        assert len(members) == 2
+        provider_ids = {member.provider_id for member in members}
+        assert provider.id in provider_ids
+        assert provider2.id in provider_ids
+
+
+@pytest.mark.asyncio
+async def test_asset_group_attribute_composite_key():
+    """Test that ProviderAssetGroupAttribute composite primary key works correctly."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Test Group",
+            description="Test group",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Create attributes with same timestamp but different lookback windows
+        timestamp = dt.datetime.now()
+
+        attribute1 = ProviderAssetGroupAttribute(
+            timestamp=timestamp,
+            provider_asset_group_id=provider_asset_group.id,
+            lookback_window_seconds=3600,  # 1 hour
+            cointegration_p_value=0.05,
+        )
+
+        attribute2 = ProviderAssetGroupAttribute(
+            timestamp=timestamp,
+            provider_asset_group_id=provider_asset_group.id,
+            lookback_window_seconds=7200,  # 2 hours
+            cointegration_p_value=0.03,
+        )
+
+        session.add_all([attribute1, attribute2])
+        session.commit()
+
+        # Verify both attributes exist
+        attributes = (
+            session.query(ProviderAssetGroupAttribute)
+            .filter_by(
+                provider_asset_group_id=provider_asset_group.id, timestamp=timestamp
+            )
+            .all()
+        )
+
+        assert len(attributes) == 2
+        lookback_windows = {attr.lookback_window_seconds for attr in attributes}
+        assert 3600 in lookback_windows
+        assert 7200 in lookback_windows
+
+
+@pytest.mark.asyncio
+async def test_asset_group_member_relationships():
+    """Test the relationships between ProviderAssetGroup, ProviderAssetGroupMember, and ProviderAssetGroupAttribute."""
+    engine = await get_engine_async()
+
+    # Create base data
+    asset_type, btc_asset, eth_asset, usd_asset, provider_type, provider = (
+        create_base_data(engine)
+    )
+
+    with Session(engine) as session:
+        # Create a ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Relationship Test Group",
+            description="Testing relationships",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Add a member
+        member = ProviderAssetGroupMember(
+            provider_asset_group_id=provider_asset_group.id,
+            provider_id=provider.id,
+            from_asset_id=usd_asset.id,
+            to_asset_id=btc_asset.id,
+        )
+        session.add(member)
+        session.commit()
+
+        # Add an attribute
+        attribute = ProviderAssetGroupAttribute(
+            timestamp=dt.datetime.now(),
+            provider_asset_group_id=provider_asset_group.id,
+            lookback_window_seconds=3600,
+            cointegration_p_value=0.05,
+            ol_mu=0.1,
+            ol_theta=0.5,
+            ol_sigma=0.2,
+        )
+        session.add(attribute)
+        session.commit()
+
+        # Verify relationships work through queries
+        # Get all members for this group
+        members = (
+            session.query(ProviderAssetGroupMember)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .all()
+        )
+        assert len(members) == 1
+        assert members[0].from_asset_id == usd_asset.id
+        assert members[0].to_asset_id == btc_asset.id
+
+        # Get all attributes for this group
+        attributes = (
+            session.query(ProviderAssetGroupAttribute)
+            .filter_by(provider_asset_group_id=provider_asset_group.id)
+            .all()
+        )
+        assert len(attributes) == 1
+        assert attributes[0].cointegration_p_value == 0.05
+        assert attributes[0].ol_mu == 0.1
+
+
+@pytest.mark.asyncio
+async def test_asset_group_inactive_status():
+    """Test that ProviderAssetGroup can be marked as inactive."""
+    engine = await get_engine_async()
+
+    with Session(engine) as session:
+        # Create an active ProviderAssetGroup
+        provider_asset_group = ProviderAssetGroup(
+            name="Test Group",
+            description="Test group",
+            is_active=True,
+        )
+        session.add(provider_asset_group)
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Verify it's active
+        assert provider_asset_group.is_active is True
+
+        # Mark as inactive
+        provider_asset_group.is_active = False
+        session.commit()
+        session.refresh(provider_asset_group)
+
+        # Verify it's inactive
+        assert provider_asset_group.is_active is False
+
+        # Query for active groups should not return this one
+        active_groups = (
+            session.query(ProviderAssetGroup).filter_by(is_active=True).all()
+        )
+        group_ids = {group.id for group in active_groups}
+        assert provider_asset_group.id not in group_ids

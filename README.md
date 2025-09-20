@@ -14,7 +14,7 @@ This package provides SQLAlchemy ORM models and database utilities for managing 
 - **Order Models**: `ProviderAssetOrder` table for tracking trading orders between assets
 - **Content Models**: `ContentType`, `ProviderContent`, and `AssetContent` tables for managing news articles and social content
 - **Sentiment Models**: `SentimentType` and `ProviderContentSentiment` tables for analyzing content sentiment
-- **Asset Group Models**: `AssetGroup`, `AssetGroupMember`, and `ProviderAssetGroupAttribute` tables for pairs trading with asset grouping and statistical analytics
+- **Asset Group Models**: `ProviderAssetGroup`, `ProviderAssetGroupMember`, and `ProviderAssetGroupAttribute` tables for pairs trading with asset grouping and statistical analytics
 - **Relation Models**: `ProviderAsset` table for mapping relationships between providers and assets
 
 ## Installation
@@ -106,8 +106,8 @@ with Session(engine) as session:
 - **AssetContent**: Maps the relationship between content and assets
 - **SentimentType**: Categorizes sentiment analysis methods (e.g., PROVIDER, NLTK, VADER) with names and descriptions
 - **ProviderContentSentiment**: Stores sentiment analysis results for content with positive, negative, neutral, and overall sentiment scores
-- **AssetGroup**: Groups assets that share common attributes with names and descriptions
-- **AssetGroupMember**: Maps asset pairs to asset groups for pairs trading (from_asset_id, to_asset_id)
+- **ProviderAssetGroup**: Groups assets that share common attributes with names and descriptions
+- **ProviderAssetGroupMember**: Maps asset pairs to provider asset groups for pairs trading (provider_asset_group_id, provider_id, from_asset_id, to_asset_id)
 - **ProviderAssetGroupAttribute**: Stores comprehensive statistical analytics for pairs trading including:
   - Cointegration p-values for stationarity testing
   - Ornstein-Uhlenbeck process parameters (mu, theta, sigma) for mean reversion modeling

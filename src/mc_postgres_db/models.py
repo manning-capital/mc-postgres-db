@@ -568,10 +568,10 @@ class AssetContent(Base):
     )
 
 
-class AssetGroup(Base):
-    __tablename__ = "asset_group"
+class ProviderAssetGroup(Base):
+    __tablename__ = "provider_asset_group"
     __table_args__ = {
-        "comment": "The asset group, will store groups of assets that share common attributes."
+        "comment": "The provider asset group, will store groups of assets that share common attributes."
     }
 
     id: Mapped[int] = mapped_column(
@@ -599,20 +599,26 @@ class AssetGroup(Base):
     )
 
     def __repr__(self):
-        return f"{AssetGroup.__name__}({self.id}, {self.name})"
+        return f"{ProviderAssetGroup.__name__}({self.id}, {self.name})"
 
 
-class AssetGroupMember(Base):
-    __tablename__ = "asset_group_member"
+class ProviderAssetGroupMember(Base):
+    __tablename__ = "provider_asset_group_member"
     __table_args__ = {
-        "comment": "The asset group member, will store pairs of assets that belong to groups for pairs trading."
+        "comment": "The provider asset group member, will store pairs of assets that belong to groups for pairs trading across different providers."
     }
 
-    asset_group_id: Mapped[int] = mapped_column(
-        ForeignKey("asset_group.id"),
+    provider_asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("provider_asset_group.id"),
         primary_key=True,
         nullable=False,
-        comment="The identifier of the asset group",
+        comment="The identifier of the provider asset group",
+    )
+    provider_id: Mapped[int] = mapped_column(
+        ForeignKey("provider.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the provider",
     )
     from_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
@@ -633,7 +639,7 @@ class AssetGroupMember(Base):
     )
 
     def __repr__(self):
-        return f"{AssetGroupMember.__name__}(asset_group_id={self.asset_group_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id})"
+        return f"{ProviderAssetGroupMember.__name__}(provider_asset_group_id={self.provider_asset_group_id}, provider_id={self.provider_id}, from_asset_id={self.from_asset_id}, to_asset_id={self.to_asset_id})"
 
 
 class ProviderAssetGroupAttribute(Base):
@@ -647,17 +653,11 @@ class ProviderAssetGroupAttribute(Base):
         primary_key=True,
         comment="The timestamp of the provider asset group attributes",
     )
-    provider_id: Mapped[int] = mapped_column(
-        ForeignKey("provider.id"),
+    provider_asset_group_id: Mapped[int] = mapped_column(
+        ForeignKey("provider_asset_group.id"),
         nullable=False,
         primary_key=True,
-        comment="The identifier of the provider",
-    )
-    asset_group_id: Mapped[int] = mapped_column(
-        ForeignKey("asset_group.id"),
-        nullable=False,
-        primary_key=True,
-        comment="The identifier of the asset group",
+        comment="The identifier of the provider asset group",
     )
     lookback_window_seconds: Mapped[int] = mapped_column(
         nullable=False,
@@ -702,4 +702,4 @@ class ProviderAssetGroupAttribute(Base):
     )
 
     def __repr__(self):
-        return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_id={self.provider_id}, asset_group_id={self.asset_group_id})"
+        return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_asset_group_id={self.provider_asset_group_id})"
