@@ -1,9 +1,9 @@
 from typing import Literal
 
 import pandas as pd
-from prefect import get_run_logger, task
-from prefect.blocks.system import Secret
+from prefect import task, get_run_logger
 from sqlalchemy import Engine, create_engine
+from prefect.blocks.system import Secret
 
 from mc_postgres_db.operations import __set_data
 

@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from mc_postgres_db.models import (
     Asset,
-    AssetType,
     Provider,
+    AssetType,
     ProviderType,
 )
 from mc_postgres_db.testing.utilities import clear_database

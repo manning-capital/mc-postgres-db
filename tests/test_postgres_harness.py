@@ -1,6 +1,6 @@
-import datetime as dt
 import os
 import sys
+import datetime as dt
 
 import pandas as pd
 
@@ -11,15 +11,15 @@ import pytest
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
+from tests.utils import create_base_data
 from mc_postgres_db.models import (
     Base,
     ProviderAssetMarket,
 )
-from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
-from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
-from mc_postgres_db.prefect.tasks import get_engine, set_data
+from mc_postgres_db.prefect.tasks import set_data, get_engine
 from mc_postgres_db.testing.utilities import clear_database
-from tests.utils import create_base_data
+from mc_postgres_db.prefect.asyncio.tasks import set_data as set_data_async
+from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 
 
 def test_engine_is_mocked():

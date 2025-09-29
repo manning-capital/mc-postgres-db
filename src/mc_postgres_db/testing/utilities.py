@@ -1,13 +1,13 @@
-import logging
 import os
+import logging
 import tempfile
 from contextlib import contextmanager
+from urllib.parse import urlparse
 
+from sqlalchemy import Engine, create_engine
+from prefect.settings import PREFECT_API_URL
 from prefect.blocks.system import Secret
 from prefect.testing.utilities import prefect_test_harness
-from prefect.settings import PREFECT_API_URL
-from sqlalchemy import Engine, create_engine
-from urllib.parse import urlparse
 
 import mc_postgres_db.models as models
 

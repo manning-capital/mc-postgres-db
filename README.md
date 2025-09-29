@@ -46,6 +46,8 @@ uv sync
 
 ## Usage
 
+### Basic Queries
+
 ```python
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
@@ -90,6 +92,112 @@ with Session(engine) as session:
         print(f"Asset code: {provider_asset.asset_code}")
 ```
 
+### Efficient Relationship Loading with `joinedload`
+
+The ORM models are optimized for efficient querying using SQLAlchemy's `joinedload` functionality. All relationships are unidirectional (singular) to avoid N+1 query problems and enable efficient eager loading:
+
+```python
+from sqlalchemy.orm import Session, joinedload
+from mc_postgres_db.models import (
+    Asset, Provider, ProviderAssetMarket, ProviderAssetOrder,
+    ProviderAssetGroup, ProviderAssetGroupMember, ProviderAssetGroupAttribute
+)
+
+# Load Asset with its AssetType (no additional queries)
+with Session(engine) as session:
+    asset = session.query(Asset).options(
+        joinedload(Asset.asset_type)
+    ).filter_by(id=1).first()
+    
+    print(f"Asset: {asset.name} ({asset.asset_type.name})")
+    # No additional query needed - asset_type is already loaded
+
+# Load ProviderAssetOrder with all related objects
+with Session(engine) as session:
+    order = session.query(ProviderAssetOrder).options(
+        joinedload(ProviderAssetOrder.provider),
+        joinedload(ProviderAssetOrder.from_asset),
+        joinedload(ProviderAssetOrder.to_asset)
+    ).filter_by(id=1).first()
+    
+    print(f"Order: {order.from_asset.name} -> {order.to_asset.name}")
+    print(f"Provider: {order.provider.name}")
+    # All relationships loaded in a single query
+
+# Load ProviderAssetGroup with members and attributes
+with Session(engine) as session:
+    group = session.query(ProviderAssetGroup).options(
+        joinedload(ProviderAssetGroup.asset_group_type),
+        joinedload(ProviderAssetGroup.members)
+    ).filter_by(id=1).first()
+    
+    print(f"Group: {group.name}")
+    print(f"Type: {group.asset_group_type.name}")
+    print(f"Members ({len(group.members)}):")
+    for member in group.members:
+        print(f"  - {member.from_asset.name} -> {member.to_asset.name} (order: {member.order})")
+
+# Load ProviderAssetGroupAttribute with related group
+with Session(engine) as session:
+    attribute = session.query(ProviderAssetGroupAttribute).options(
+        joinedload(ProviderAssetGroupAttribute.provider_asset_group)
+    ).filter_by(
+        provider_asset_group_id=1,
+        lookback_window_seconds=86400
+    ).first()
+    
+    print(f"Group: {attribute.provider_asset_group.name}")
+    print(f"Cointegration p-value: {attribute.cointegration_pvalue}")
+    print(f"OU Process - mu: {attribute.ou_mu}, theta: {attribute.ou_theta}, sigma: {attribute.ou_sigma}")
+```
+
+### Asset Group Management
+
+```python
+# Create a new asset group for pairs trading
+with Session(engine) as session:
+    # Create asset group type
+    asset_group_type = AssetGroupType(
+        name="Pairs Trading",
+        description="Groups for pairs trading strategies",
+        is_active=True
+    )
+    session.add(asset_group_type)
+    session.flush()
+    
+    # Create the asset group
+    asset_group = ProviderAssetGroup(
+        provider_id=1,
+        asset_group_type_id=asset_group_type.id,
+        name="BTC-ETH Pairs",
+        description="Bitcoin and Ethereum pairs for mean reversion",
+        is_active=True
+    )
+    session.add(asset_group)
+    session.flush()
+    
+    # Add members to the group
+    member1 = ProviderAssetGroupMember(
+        provider_id=1,
+        provider_asset_group_id=asset_group.id,
+        from_asset_id=1,  # Bitcoin
+        to_asset_id=2,    # USD
+        order=1
+    )
+    member2 = ProviderAssetGroupMember(
+        provider_id=1,
+        provider_asset_group_id=asset_group.id,
+        from_asset_id=3,  # Ethereum
+        to_asset_id=2,    # USD
+        order=2
+    )
+    session.add_all([member1, member2])
+    session.commit()
+    
+    print(f"Created asset group: {asset_group.name}")
+    print(f"Members: {len(asset_group.members)}")
+```
+
 ## Models Overview
 
 ### Core Models
@@ -106,8 +214,9 @@ with Session(engine) as session:
 - **AssetContent**: Maps the relationship between content and assets
 - **SentimentType**: Categorizes sentiment analysis methods (e.g., PROVIDER, NLTK, VADER) with names and descriptions
 - **ProviderContentSentiment**: Stores sentiment analysis results for content with positive, negative, neutral, and overall sentiment scores
+- **AssetGroupType**: Categorizes asset group types (e.g., "Pairs Trading", "Mean Reversion") for organizing statistical groups
 - **ProviderAssetGroup**: Groups provider assets for calculating aggregated statistical values between members. Each group contains provider asset pairs that share statistical relationships for cointegration analysis, mean reversion modeling, and linear regression calculations.
-- **ProviderAssetGroupMember**: Maps provider asset pairs to statistical groups for aggregated calculations. Each record represents a pair of assets (from_asset_id, to_asset_id) from a specific provider that belong to a statistical group. Optional order field allows sequencing within groups for hierarchical analysis.
+- **ProviderAssetGroupMember**: Maps provider asset pairs to statistical groups for aggregated calculations. Each record represents a pair of assets (from_asset_id, to_asset_id) from a specific provider that belong to a statistical group. The order field allows sequencing within groups for hierarchical analysis.
 - **ProviderAssetGroupAttribute**: Stores aggregated statistical calculations for provider asset groups across multiple time windows. Contains cointegration analysis results, Ornstein-Uhlenbeck process parameters for mean reversion modeling, and comprehensive linear regression statistics including coefficients, fit measures, and significance tests.
 
 ### Database Schema Features
@@ -119,6 +228,8 @@ with Session(engine) as session:
 - **Cross-Reference Tables**: Enables many-to-many relationships between assets, providers, and content
 - **Statistical Group Support**: Specialized tables for grouping provider assets and calculating aggregated statistical measures across multiple time windows
 - **Composite Primary Keys**: Ensures uniqueness across multiple dimensions (timestamp, provider, asset group, lookback window)
+- **Optimized Relationships**: Unidirectional relationships designed for efficient `joinedload` operations, eliminating N+1 query problems
+- **Asset Group Management**: Comprehensive support for pairs trading and statistical analysis with ordered member sequences
 
 ## Development
 
