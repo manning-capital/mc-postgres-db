@@ -29,3 +29,15 @@ packages = [
     { include = "mc_postgres_db/prefect/asyncio" },
     { include = "mc_postgres_db/testing" }
 ]
+
+[tool.ruff.lint]
+select = ["I", "F401"]  # Enable import sorting and unused imports
+
+[tool.ruff.lint.isort]
+# Sort imports by line length (shortest first)
+length-sort = true
+length-sort-straight = true
+
+[tool.ruff]
+# Enable automatic fixing of issues
+fix = true

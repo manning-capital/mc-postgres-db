@@ -1,8 +1,8 @@
 import datetime
 from typing import Optional
 
-from sqlalchemy import Engine, ForeignKey, MetaData, String, func, select
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
+from sqlalchemy import Engine, String, MetaData, ForeignKey, func, select
+from sqlalchemy.orm import Mapped, Session, DeclarativeBase, relationship, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -80,8 +80,12 @@ class Asset(Base):
         nullable=True,
         comment="The identifier of the underlying asset",
     )
-    underlying_asset: Mapped[Optional["Asset"]] = relationship("Asset", remote_side=[id])
-    derived_assets: Mapped[list["Asset"]] = relationship("Asset", remote_side=[underlying_asset_id])
+    underlying_asset: Mapped[Optional["Asset"]] = relationship(
+        "Asset", remote_side=[id]
+    )
+    derived_assets: Mapped[list["Asset"]] = relationship(
+        "Asset", remote_side=[underlying_asset_id]
+    )
     is_active: Mapped[bool] = mapped_column(
         default=True, comment="Whether the asset is active"
     )
@@ -164,8 +168,12 @@ class Provider(Base):
         nullable=True,
         comment="The identifier of the underlying provider",
     )
-    underlying_provider: Mapped[Optional["Provider"]] = relationship("Provider", remote_side=[id])
-    derived_providers: Mapped[list["Provider"]] = relationship("Provider", remote_side=[underlying_provider_id])
+    underlying_provider: Mapped[Optional["Provider"]] = relationship(
+        "Provider", remote_side=[id]
+    )
+    derived_providers: Mapped[list["Provider"]] = relationship(
+        "Provider", remote_side=[underlying_provider_id]
+    )
     url: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True, comment="The URL of the provider"
     )
@@ -743,7 +751,9 @@ class ProviderAssetGroupAttribute(Base):
         primary_key=True,
         comment="The identifier of the provider asset group",
     )
-    provider_asset_group: Mapped["ProviderAssetGroup"] = relationship("ProviderAssetGroup")
+    provider_asset_group: Mapped["ProviderAssetGroup"] = relationship(
+        "ProviderAssetGroup"
+    )
     lookback_window_seconds: Mapped[int] = mapped_column(
         nullable=False,
         primary_key=True,

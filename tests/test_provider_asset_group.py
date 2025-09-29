@@ -1,6 +1,6 @@
-import datetime as dt
 import os
 import sys
+import datetime as dt
 
 import numpy as np
 import pandas as pd
@@ -13,18 +13,18 @@ import statsmodels.api as sm
 from sqlalchemy.orm import Session
 from statsmodels.regression.rolling import RollingOLS
 
-from mc_postgres_db.models import (
-    AssetGroupType,
-    Provider,
-    ProviderAssetGroup,
-    ProviderAssetGroupAttribute,
-    ProviderAssetGroupMember,
-    ProviderAssetMarket,
-)
-from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
-from mc_postgres_db.prefect.tasks import set_data
 from tests.utils import create_base_data
+from mc_postgres_db.models import (
+    Provider,
+    AssetGroupType,
+    ProviderAssetGroup,
+    ProviderAssetMarket,
+    ProviderAssetGroupMember,
+    ProviderAssetGroupAttribute,
+)
+from mc_postgres_db.prefect.tasks import set_data
 from mc_postgres_db.testing.utilities import clear_database
+from mc_postgres_db.prefect.asyncio.tasks import get_engine as get_engine_async
 
 
 def create_default_asset_group_type(session: Session) -> AssetGroupType:
