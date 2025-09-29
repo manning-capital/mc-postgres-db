@@ -65,6 +65,7 @@ class Asset(Base):
         nullable=False,
         comment="The identifier of the asset type",
     )
+    asset_type: Mapped["AssetType"] = relationship("AssetType")
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="The name of the asset"
     )
@@ -79,6 +80,8 @@ class Asset(Base):
         nullable=True,
         comment="The identifier of the underlying asset",
     )
+    underlying_asset: Mapped[Optional["Asset"]] = relationship("Asset", remote_side=[id])
+    derived_assets: Mapped[list["Asset"]] = relationship("Asset", remote_side=[underlying_asset_id])
     is_active: Mapped[bool] = mapped_column(
         default=True, comment="Whether the asset is active"
     )
@@ -144,6 +147,7 @@ class Provider(Base):
         nullable=False,
         comment="The identifier of the provider type",
     )
+    provider_type: Mapped["ProviderType"] = relationship("ProviderType")
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="The name of the provider"
     )
@@ -160,6 +164,8 @@ class Provider(Base):
         nullable=True,
         comment="The identifier of the underlying provider",
     )
+    underlying_provider: Mapped[Optional["Provider"]] = relationship("Provider", remote_side=[id])
+    derived_providers: Mapped[list["Provider"]] = relationship("Provider", remote_side=[underlying_provider_id])
     url: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True, comment="The URL of the provider"
     )
@@ -243,12 +249,14 @@ class ProviderAsset(Base):
         primary_key=True,
         comment="The identifier of the provider",
     )
+    provider: Mapped["Provider"] = relationship("Provider")
     asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         nullable=False,
         primary_key=True,
         comment="The identifier of the asset",
     )
+    asset: Mapped["Asset"] = relationship("Asset")
     asset_code: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
@@ -290,14 +298,17 @@ class ProviderAssetOrder(Base):
         nullable=False,
         comment="The identifier of the provider",
     )
+    provider: Mapped["Provider"] = relationship("Provider")
     from_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         nullable=False,
         comment="The identifier of the from asset",
     )
+    from_asset: Mapped["Asset"] = relationship("Asset", foreign_keys=[from_asset_id])
     to_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"), nullable=False, comment="The identifier of the to asset"
     )
+    to_asset: Mapped["Asset"] = relationship("Asset", foreign_keys=[to_asset_id])
     price: Mapped[float] = mapped_column(
         nullable=True, comment="The price of the provider asset order"
     )
@@ -326,18 +337,21 @@ class ProviderAssetMarket(Base):
         primary_key=True,
         comment="The identifier of the provider",
     )
+    provider: Mapped["Provider"] = relationship("Provider")
     from_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         nullable=False,
         primary_key=True,
         comment="The identifier of the from asset. This is also called the base asset.",
     )
+    from_asset: Mapped["Asset"] = relationship("Asset", foreign_keys=[from_asset_id])
     to_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         nullable=False,
         primary_key=True,
         comment="The identifier of the to asset. This is also called the quote asset.",
     )
+    to_asset: Mapped["Asset"] = relationship("Asset", foreign_keys=[to_asset_id])
     close: Mapped[float] = mapped_column(
         nullable=True, comment="The closing price of the provider asset market"
     )
@@ -413,6 +427,7 @@ class ProviderContent(Base):
         nullable=False,
         comment="The identifier of the provider",
     )
+    provider: Mapped["Provider"] = relationship("Provider")
     content_external_code: Mapped[str] = mapped_column(
         String(1000),
         nullable=False,
@@ -423,6 +438,7 @@ class ProviderContent(Base):
         nullable=False,
         comment="The identifier of the content type",
     )
+    content_type: Mapped["ContentType"] = relationship("ContentType")
     authors: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True, comment="The authors of the provider content"
     )
@@ -499,12 +515,14 @@ class ProviderContentSentiment(Base):
         nullable=False,
         comment="The identifier of the provider content",
     )
+    provider_content: Mapped["ProviderContent"] = relationship("ProviderContent")
     sentiment_type_id: Mapped[int] = mapped_column(
         ForeignKey("sentiment_type.id"),
         primary_key=True,
         nullable=False,
         comment="The identifier of the sentiment type",
     )
+    sentiment_type: Mapped["SentimentType"] = relationship("SentimentType")
     sentiment_text: Mapped[Optional[str]] = mapped_column(
         String(1000),
         nullable=True,
@@ -554,12 +572,14 @@ class AssetContent(Base):
         nullable=False,
         comment="The identifier of the provider content",
     )
+    provider_content: Mapped["ProviderContent"] = relationship("ProviderContent")
     asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         primary_key=True,
         nullable=False,
         comment="The identifier of the asset",
     )
+    asset: Mapped["Asset"] = relationship("Asset")
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
@@ -625,16 +645,15 @@ class ProviderAssetGroup(Base):
         nullable=False,
         comment="The identifier of the asset group type",
     )
+    asset_group_type: Mapped["AssetGroupType"] = relationship("AssetGroupType")
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="The name of the asset group"
     )
     description: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True, comment="The description of the asset group"
     )
-    # ORM relationship to access members as a list
     members: Mapped[list["ProviderAssetGroupMember"]] = relationship(
         "ProviderAssetGroupMember",
-        back_populates="group",
         cascade="all, delete-orphan",
         order_by="ProviderAssetGroupMember.order.asc()",
     )
@@ -675,26 +694,27 @@ class ProviderAssetGroupMember(Base):
         nullable=False,
         comment="The identifier of the provider",
     )
+    provider: Mapped["Provider"] = relationship("Provider")
     from_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         primary_key=True,
         nullable=False,
         comment="The identifier of the from asset (base asset)",
     )
+    from_asset: Mapped["Asset"] = relationship("Asset", foreign_keys=[from_asset_id])
     to_asset_id: Mapped[int] = mapped_column(
         ForeignKey("asset.id"),
         primary_key=True,
         nullable=False,
         comment="The identifier of the to asset (quote asset)",
     )
+    to_asset: Mapped["Asset"] = relationship("Asset", foreign_keys=[to_asset_id])
     order: Mapped[int] = mapped_column(
         nullable=False,
         comment="The order of the asset pair within the group (1, 2, 3, etc.). Required field for sequencing members within the group.",
     )
-    # ORM relationship back to the group
     group: Mapped["ProviderAssetGroup"] = relationship(
         "ProviderAssetGroup",
-        back_populates="members",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
@@ -723,6 +743,7 @@ class ProviderAssetGroupAttribute(Base):
         primary_key=True,
         comment="The identifier of the provider asset group",
     )
+    provider_asset_group: Mapped["ProviderAssetGroup"] = relationship("ProviderAssetGroup")
     lookback_window_seconds: Mapped[int] = mapped_column(
         nullable=False,
         primary_key=True,
