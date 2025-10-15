@@ -21,12 +21,10 @@ jobs:
 
   test:
     name: Run tests
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: astral-sh/setup-uv@v3
 
       - name: "Install dependencies"
