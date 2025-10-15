@@ -27,6 +27,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      
+      - name: "Verify Docker is available"
+        run: |
+          docker --version
+          docker info
+          echo "Docker is ready for testing"
+      
       - uses: astral-sh/setup-uv@v3
 
       - name: "Install dependencies"
