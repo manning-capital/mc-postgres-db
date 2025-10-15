@@ -167,6 +167,7 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
         )
 
     container = None
+    engine = None
     try:
         # Start PostgreSQL container
         LOGGER.info(
@@ -267,7 +268,7 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
 
     finally:
         # Clean-up the database
-        if container:
+        if container and engine:
             try:
                 LOGGER.info("Dropping all tables...")
                 models.Base.metadata.drop_all(engine)
