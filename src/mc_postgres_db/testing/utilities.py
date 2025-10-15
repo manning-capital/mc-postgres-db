@@ -3,7 +3,6 @@ import time
 import uuid
 import socket
 import logging
-import tempfile
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
@@ -173,7 +172,7 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
         LOGGER.info(
             f"Starting PostgreSQL container '{container_name}' with image postgres:{postgres_version}..."
         )
-        
+
         # Start PostgreSQL container with ephemeral storage
         container = client.containers.run(
             f"postgres:{postgres_version}",
