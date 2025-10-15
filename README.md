@@ -36,6 +36,24 @@ cd mc-postgres-db
 uv sync
 ```
 
+### Testing Dependencies
+
+For testing, you'll also need Docker installed and running:
+
+```bash
+# Install Docker (if not already installed)
+# On macOS with Homebrew:
+brew install --cask docker
+
+# On Ubuntu/Debian:
+sudo apt-get update
+sudo apt-get install docker.io
+
+# Start Docker daemon
+# On macOS: Start Docker Desktop
+# On Linux: sudo systemctl start docker
+```
+
 ## Database Setup
 
 1. **PostgreSQL Setup**: Ensure PostgreSQL is installed and running
@@ -310,17 +328,42 @@ This database integrates with various financial data providers:
 
 ## Testing Utilities
 
-This package provides a robust testing harness for database-related tests, allowing you to run your tests against a temporary SQLite database that mirrors your PostgreSQL schema. This is especially useful for testing Prefect flows and tasks that interact with the database, without requiring a live PostgreSQL instance or extensive mocking.
+This package provides a robust testing harness for database-related tests, allowing you to run your tests against a temporary PostgreSQL database running in Docker. This is especially useful for testing Prefect flows and tasks that interact with the database, without requiring a live PostgreSQL instance or extensive mocking.
+
+### Prerequisites
+
+The testing harness requires Docker to be installed and running on your system:
+
+```bash
+# Check if Docker is installed and running
+docker --version
+docker ps
+```
+
+If Docker is not available, you may need to install Docker Desktop or start the Docker daemon.
 
 ### `postgres_test_harness`
 
-The `postgres_test_harness` context manager (found in `mc_postgres_db.testing.utilities`) creates a temporary SQLite database file, initializes all ORM models, and **patches the Prefect tasks used to obtain the SQLAlchemy engine** (both sync and async) so that all database operations in your flows and tasks are transparently redirected to this SQLite database.
+The `postgres_test_harness` context manager (found in `mc_postgres_db.testing.utilities`) creates a temporary PostgreSQL database using Docker, initializes all ORM models, and updates the Prefect secret that stores the database URL. This ensures that all Prefect tasks which retrieve the database engine (both sync and async) will use this temporary PostgreSQL database during your tests, without requiring any patching or changes to task code.
 
 **Key benefits:**
 - No need to change or mock every Prefect flow or task that uses the database engine.
-- All Prefect tasks that call `get_engine` (sync or async) will automatically use the temporary SQLite database.
+- All Prefect tasks that call `get_engine` (sync or async) will automatically use the temporary PostgreSQL database.
 - The database is created fresh for each test session or function (depending on fixture scope), ensuring isolation and repeatability.
-- At the end of the test, the database and all tables are cleaned up.
+- Uses ephemeral storage (no volume mounting) for complete isolation between test runs.
+- Comprehensive safety checks to prevent accidental connection to production databases.
+- At the end of the test, the Docker container and all tables are cleaned up.
+
+**Safety Features:**
+- Validates that the database connection is to localhost only
+- Ensures the database uses test credentials (`testuser`/`testpass`/`testdb`)
+- Checks database size to prevent accidental connection to production databases
+- Verifies Docker container environment variables match expected test configuration
+
+**Configuration:**
+- PostgreSQL version can be controlled via the `POSTGRES_VERSION` environment variable (defaults to `latest`)
+- Test database uses ephemeral storage for complete isolation
+- Automatic port selection to avoid conflicts
 
 ### Usage with Pytest
 
@@ -336,7 +379,7 @@ def postgres_harness():
         yield
 
 def test_my_flow():
-    # Any Prefect task that calls get_engine() will use the SQLite test DB
+    # Any Prefect task that calls get_engine() will use the PostgreSQL test DB
     ...
 ```
 
@@ -352,7 +395,22 @@ def postgres_harness():
         yield
 ```
 
-Now, all your tests (including those that run Prefect flows) will use the temporary SQLite database, and you don't need to modify your flows or tasks to support testing.
+Now, all your tests (including those that run Prefect flows) will use the temporary PostgreSQL database, and you don't need to modify your flows or tasks to support testing.
+
+### Additional Testing Utilities
+
+The package also provides a `clear_database` function for manually clearing test databases:
+
+```python
+from mc_postgres_db.testing.utilities import clear_database
+from sqlalchemy import create_engine
+
+# Clear a test database (with safety checks)
+engine = create_engine("postgresql://testuser:testpass@localhost:5432/testdb")
+clear_database(engine)  # Drops and recreates all tables
+```
+
+**Note:** The `clear_database` function includes comprehensive safety checks to prevent accidental clearing of production databases.
 
 ## Contributing
 
