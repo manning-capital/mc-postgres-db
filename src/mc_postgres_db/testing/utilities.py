@@ -193,6 +193,10 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
             remove=False,  # We'll remove manually for better control
         )
 
+        # Close the port socket now that Docker has successfully bound to the port
+        port_socket.close()
+        LOGGER.info(f"Released port {port} socket - Docker container is now bound to it")
+
         # Wait for PostgreSQL to be ready
         _wait_for_postgres("localhost", port, db_user, db_password, db_name)
 
@@ -290,9 +294,10 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
             except Exception as e:
                 LOGGER.warning(f"Error cleaning up container: {e}")
 
-        # Always clean up the port socket
+        # Always clean up the port socket (if not already closed)
         try:
-            port_socket.close()
+            if not port_socket._closed:
+                port_socket.close()
         except Exception as e:
             LOGGER.warning(f"Error closing port socket: {e}")
 
