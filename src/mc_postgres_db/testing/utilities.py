@@ -195,7 +195,9 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
 
         # Close the port socket now that Docker has successfully bound to the port
         port_socket.close()
-        LOGGER.info(f"Released port {port} socket - Docker container is now bound to it")
+        LOGGER.info(
+            f"Released port {port} socket - Docker container is now bound to it"
+        )
 
         # Wait for PostgreSQL to be ready
         _wait_for_postgres("localhost", port, db_user, db_password, db_name)
