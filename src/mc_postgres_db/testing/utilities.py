@@ -104,14 +104,13 @@ def clear_database(engine: Engine):
 def _find_free_port():
     """
     Find a free port on localhost.
-    Returns a tuple of (port, socket) where the socket is kept bound
-    to prevent race conditions. The caller is responsible for closing the socket.
+    Uses a more robust approach to avoid race conditions.
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("", 0))
-    s.listen(1)
-    port = s.getsockname()[1]
-    return port, s
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        s.listen(1)
+        port = s.getsockname()[1]
+    return port
 
 
 def _wait_for_postgres(
@@ -154,15 +153,14 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
     db_password = TEST_DB_PASSWORD
     db_name = TEST_DB_NAME
 
-    # Find a free port and keep the socket bound to prevent race conditions
-    port, port_socket = _find_free_port()
+    # Find a free port
+    port = _find_free_port()
     LOGGER.info(f"Using port {port} for PostgreSQL container")
 
     # Initialize Docker client
     try:
         client = docker.from_env()
     except Exception as e:
-        port_socket.close()  # Clean up the socket
         raise RuntimeError(
             f"Failed to initialize Docker client: {e}\n"
             "Please ensure Docker is running. You can start Docker Desktop or run:\n"
@@ -193,14 +191,8 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
             remove=False,  # We'll remove manually for better control
         )
 
-        # Wait for PostgreSQL to be ready (this ensures Docker has bound to the port)
+        # Wait for PostgreSQL to be ready
         _wait_for_postgres("localhost", port, db_user, db_password, db_name)
-
-        # Now close the port socket since Docker has successfully bound to the port
-        port_socket.close()
-        LOGGER.info(
-            f"Released port {port} socket - Docker container is now bound to it"
-        )
 
         # Additional safety check: verify the container is actually running our test instance
         LOGGER.info("Verifying container is our test instance...")
@@ -295,12 +287,5 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
                 container.remove()
             except Exception as e:
                 LOGGER.warning(f"Error cleaning up container: {e}")
-
-        # Always clean up the port socket (if not already closed)
-        try:
-            if not port_socket._closed:
-                port_socket.close()
-        except Exception as e:
-            LOGGER.warning(f"Error closing port socket: {e}")
 
         # No temporary directory cleanup needed with ephemeral storage
