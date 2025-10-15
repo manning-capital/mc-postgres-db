@@ -669,6 +669,7 @@ dev = [
     { name = "python-dotenv" },
 ]
 test = [
+    { name = "docker" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "statsmodels" },
@@ -687,6 +688,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [{ name = "python-dotenv", specifier = ">=1.1.0" }]
 test = [
+    { name = "docker", specifier = ">=7.0.0" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "statsmodels", specifier = ">=0.14.0" },
