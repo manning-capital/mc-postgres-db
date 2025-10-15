@@ -140,11 +140,8 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
     # Get PostgreSQL version from environment variable or default to latest
     postgres_version = os.getenv("POSTGRES_VERSION", "latest")
 
-    # Create a temporary directory for PostgreSQL data
-    LOGGER.info("Creating temporary directory for PostgreSQL data...")
-    temp_dir = tempfile.TemporaryDirectory()
-    data_path = temp_dir.name
-    LOGGER.info(f"Temporary PostgreSQL data directory: {data_path}")
+    # Use ephemeral storage for PostgreSQL data (no volume mounting)
+    LOGGER.info("Using ephemeral storage for PostgreSQL data (no volume mounting)")
 
     # Generate unique container name
     container_name = f"test-postgres-{uuid.uuid4().hex[:8]}"
@@ -176,6 +173,8 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
         LOGGER.info(
             f"Starting PostgreSQL container '{container_name}' with image postgres:{postgres_version}..."
         )
+        
+        # Start PostgreSQL container with ephemeral storage
         container = client.containers.run(
             f"postgres:{postgres_version}",
             name=container_name,
@@ -185,7 +184,6 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
                 "POSTGRES_DB": db_name,
             },
             ports={5432: port},
-            volumes={data_path: {"bind": "/var/lib/postgresql/data", "mode": "rw"}},
             detach=True,
             remove=False,  # We'll remove manually for better control
         )
@@ -286,9 +284,4 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
             except Exception as e:
                 LOGGER.warning(f"Error cleaning up container: {e}")
 
-        # Clean up temporary directory
-        try:
-            LOGGER.info("Cleaning up temporary PostgreSQL data directory...")
-            temp_dir.cleanup()
-        except Exception as e:
-            LOGGER.warning(f"Error cleaning up temporary directory: {e}")
+        # No temporary directory cleanup needed with ephemeral storage
