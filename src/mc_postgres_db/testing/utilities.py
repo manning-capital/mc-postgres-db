@@ -267,15 +267,16 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
             yield
 
     finally:
-        # Clean-up the database
-        if container and engine:
+        # Clean-up the database (only if engine was created successfully)
+        if engine:
             try:
                 LOGGER.info("Dropping all tables...")
                 models.Base.metadata.drop_all(engine)
             except Exception as e:
                 LOGGER.warning(f"Error dropping tables: {e}")
 
-            # Stop and remove container
+        # Always clean up the container (regardless of engine state)
+        if container:
             try:
                 LOGGER.info(f"Stopping PostgreSQL container '{container_name}'...")
                 container.stop(timeout=10)
