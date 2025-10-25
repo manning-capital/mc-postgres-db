@@ -376,8 +376,9 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
                 LOGGER.warning(f"Error cleaning up container: {e}")
 
         # Clean up the named volume
-        try:
-            LOGGER.info(f"Removing PostgreSQL volume '{volume_name}'...")
-            volume.remove()
-        except Exception as e:
-            LOGGER.warning(f"Error cleaning up volume: {e}")
+        if volume:
+            try:
+                LOGGER.info(f"Removing PostgreSQL volume '{volume_name}'...")
+                volume.remove()
+            except Exception as e:
+                LOGGER.warning(f"Error cleaning up volume: {e}")
