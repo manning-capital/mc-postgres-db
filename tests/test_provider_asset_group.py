@@ -795,7 +795,6 @@ async def test_provider_asset_group_orm_relationship():
 
         # Test reverse relationship
         assert member1.group.id == provider_asset_group.id
-        assert member1.group.id == provider_asset_group.id
         assert member2.group.id == provider_asset_group.id
 
         # Test adding members through the relationship
