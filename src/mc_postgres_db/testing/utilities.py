@@ -175,16 +175,6 @@ def _cleanup_old_test_volumes():
         LOGGER.warning(f"Failed to clean up old test volumes: {e}")
 
 
-def cleanup_test_resources():
-    """
-    Public function to manually clean up old test containers and volumes.
-    This can be called from scripts or manually when needed.
-    """
-    LOGGER.info("Manual cleanup of test resources (containers and volumes) requested")
-    _cleanup_old_test_containers()
-    _cleanup_old_test_volumes()
-
-
 def _find_free_port():
     """
     Find a free port on localhost.
