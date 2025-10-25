@@ -211,8 +211,6 @@ def create_test_data(session: Session):
     # Create ProviderAssetGroup
     provider_asset_group = ProviderAssetGroup(
         asset_group_type_id=asset_group_type.id,
-        name="Tech Stocks Pairs",
-        description="Pairs trading for tech stocks",
         is_active=True,
     )
     session.add(provider_asset_group)
@@ -237,9 +235,9 @@ def create_test_data(session: Session):
         provider_asset_group_id=provider_asset_group.id,
         lookback_window_seconds=86400,  # 24 hours
         cointegration_p_value=0.05,
-        ol_mu=0.1,
-        ol_theta=0.5,
-        ol_sigma=0.2,
+        ou_mu=0.1,
+        ou_theta=0.5,
+        ou_sigma=0.2,
         linear_fit_alpha=0.1,
         linear_fit_beta=0.95,
         linear_fit_mse=0.01,
@@ -668,7 +666,6 @@ async def test_provider_asset_group_relationships():
         )
 
         assert provider_asset_group is not None
-        assert provider_asset_group.name == "Tech Stocks Pairs"
         assert provider_asset_group.asset_group_type is not None
         assert provider_asset_group.asset_group_type.name == "Pairs Trading"
         assert len(provider_asset_group.members) == 1
@@ -707,7 +704,6 @@ async def test_provider_asset_group_member_relationships():
         assert provider_asset_group_member is not None
         assert provider_asset_group_member.order == 1
         assert provider_asset_group_member.group is not None
-        assert provider_asset_group_member.group.name == "Tech Stocks Pairs"
         assert provider_asset_group_member.provider is not None
         assert provider_asset_group_member.provider.name == "Test Provider"
         assert provider_asset_group_member.from_asset is not None
@@ -744,10 +740,6 @@ async def test_provider_asset_group_attribute_relationships():
         assert provider_asset_group_attribute is not None
         assert provider_asset_group_attribute.cointegration_p_value == 0.05
         assert provider_asset_group_attribute.provider_asset_group is not None
-        assert (
-            provider_asset_group_attribute.provider_asset_group.name
-            == "Tech Stocks Pairs"
-        )
 
 
 @pytest.mark.asyncio

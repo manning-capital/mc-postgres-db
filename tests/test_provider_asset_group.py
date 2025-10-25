@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime as dt
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -136,8 +137,6 @@ async def test_create_provider_asset_group_attribute():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="BTC (Kraken)/ETH (Kraken) Asset Group",
-            description="BTC (Kraken)/ETH (Kraken) Asset Group",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -185,9 +184,9 @@ async def test_create_provider_asset_group_attribute():
         }
     )
     provider_asset_group_attribute_df["cointegration_p_value"] = results.pvalues[:, 1]
-    provider_asset_group_attribute_df["ol_mu"] = mu
-    provider_asset_group_attribute_df["ol_theta"] = theta
-    provider_asset_group_attribute_df["ol_sigma"] = sigma
+    provider_asset_group_attribute_df["ou_mu"] = mu
+    provider_asset_group_attribute_df["ou_theta"] = theta
+    provider_asset_group_attribute_df["ou_sigma"] = sigma
     provider_asset_group_attribute_df["linear_fit_alpha"] = results.params[:, 0]
     provider_asset_group_attribute_df["linear_fit_beta"] = results.params[:, 1]
     provider_asset_group_attribute_df["linear_fit_mse"] = results.mse_resid
@@ -220,8 +219,6 @@ async def test_create_provider_asset_group_with_members():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Test Crypto Group",
-            description="Test group for crypto pairs",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -259,7 +256,6 @@ async def test_create_provider_asset_group_with_members():
         )
 
         assert len(members) == 2
-        assert retrieved_group.name == "Test Crypto Group"
         assert retrieved_group.is_active is True
 
 
@@ -280,8 +276,6 @@ async def test_composite_primary_key_constraint():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Test Group",
-            description="Test group",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -310,10 +304,16 @@ async def test_composite_primary_key_constraint():
         session.add(duplicate_member)
 
         # Should raise an IntegrityError
-        with pytest.raises(
-            Exception
-        ):  # SQLite raises Exception, PostgreSQL would raise IntegrityError
-            session.commit()
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "New instance.*conflicts with persistent instance",
+                category=Warning,
+            )
+            with pytest.raises(
+                Exception
+            ):  # SQLite raises Exception, PostgreSQL would raise IntegrityError
+                session.commit()
         session.rollback()
 
 
@@ -334,8 +334,6 @@ async def test_provider_asset_group_attributes():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Test Group",
-            description="Test group",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -351,9 +349,9 @@ async def test_provider_asset_group_attributes():
             provider_asset_group_id=provider_asset_group.id,
             lookback_window_seconds=3600,  # 1 hour
             cointegration_p_value=0.05,
-            ol_mu=0.1,
-            ol_theta=0.5,
-            ol_sigma=0.2,
+            ou_mu=0.1,
+            ou_theta=0.5,
+            ou_sigma=0.2,
             linear_fit_alpha=1.0,
             linear_fit_beta=0.8,
             linear_fit_mse=0.01,
@@ -366,9 +364,9 @@ async def test_provider_asset_group_attributes():
             provider_asset_group_id=provider_asset_group.id,
             lookback_window_seconds=7200,  # 2 hours
             cointegration_p_value=0.03,
-            ol_mu=0.08,
-            ol_theta=0.6,
-            ol_sigma=0.15,
+            ou_mu=0.08,
+            ou_theta=0.6,
+            ou_sigma=0.15,
             linear_fit_alpha=1.1,
             linear_fit_beta=0.75,
             linear_fit_mse=0.008,
@@ -402,12 +400,12 @@ async def test_provider_asset_group_attributes():
 
         # Verify attributes
         assert retrieved_attr1.cointegration_p_value == 0.05
-        assert retrieved_attr1.ol_mu == 0.1
+        assert retrieved_attr1.ou_mu == 0.1
         assert retrieved_attr1.linear_fit_alpha == 1.0
         assert retrieved_attr1.linear_fit_r_squared == 0.95
 
         assert retrieved_attr2.cointegration_p_value == 0.03
-        assert retrieved_attr2.ol_mu == 0.08
+        assert retrieved_attr2.ou_mu == 0.08
         assert retrieved_attr2.linear_fit_alpha == 1.1
         assert retrieved_attr2.linear_fit_r_squared == 0.97
 
@@ -440,8 +438,6 @@ async def test_multiple_providers_same_asset_group():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Multi-Provider Group",
-            description="Group with multiple providers",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -496,8 +492,6 @@ async def test_asset_group_attribute_composite_key():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Test Group",
-            description="Test group",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -556,8 +550,6 @@ async def test_asset_group_member_relationships():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Relationship Test Group",
-            description="Testing relationships",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -581,9 +573,9 @@ async def test_asset_group_member_relationships():
             provider_asset_group_id=provider_asset_group.id,
             lookback_window_seconds=3600,
             cointegration_p_value=0.05,
-            ol_mu=0.1,
-            ol_theta=0.5,
-            ol_sigma=0.2,
+            ou_mu=0.1,
+            ou_theta=0.5,
+            ou_sigma=0.2,
         )
         session.add(attribute)
         session.commit()
@@ -607,7 +599,7 @@ async def test_asset_group_member_relationships():
         )
         assert len(attributes) == 1
         assert attributes[0].cointegration_p_value == 0.05
-        assert attributes[0].ol_mu == 0.1
+        assert attributes[0].ou_mu == 0.1
 
 
 @pytest.mark.asyncio
@@ -627,8 +619,6 @@ async def test_provider_asset_group_member_ordering():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Ordered Test Group",
-            description="Testing ordering functionality",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -710,8 +700,6 @@ async def test_provider_asset_group_member_required_ordering():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Required Order Test Group",
-            description="Testing required ordering",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -767,8 +755,6 @@ async def test_provider_asset_group_orm_relationship():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="ORM Test Group",
-            description="Testing ORM relationships",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -809,7 +795,6 @@ async def test_provider_asset_group_orm_relationship():
 
         # Test reverse relationship
         assert member1.group.id == provider_asset_group.id
-        assert member1.group.name == "ORM Test Group"
         assert member2.group.id == provider_asset_group.id
 
         # Test adding members through the relationship
@@ -846,8 +831,6 @@ async def test_provider_asset_group_cascade_delete():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Cascade Test Group",
-            description="Testing cascade delete",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -910,8 +893,6 @@ async def test_orm_member_retrieval_basic():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Basic ORM Test Group",
-            description="Testing basic ORM member retrieval",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -987,8 +968,6 @@ async def test_orm_multiple_groups_member_isolation():
 
         provider_asset_group_1 = ProviderAssetGroup(
             asset_group_type_id=asset_group_type_1.id,
-            name="First ORM Test Group",
-            description="Testing multiple groups - first",
             is_active=True,
         )
         session.add(provider_asset_group_1)
@@ -1027,8 +1006,6 @@ async def test_orm_multiple_groups_member_isolation():
 
         provider_asset_group_2 = ProviderAssetGroup(
             asset_group_type_id=asset_group_type_2.id,
-            name="Second ORM Test Group",
-            description="Testing multiple groups - second",
             is_active=True,
         )
         session.add(provider_asset_group_2)
@@ -1091,8 +1068,6 @@ async def test_orm_bidirectional_relationship():
 
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Bidirectional Test Group",
-            description="Testing bidirectional relationship",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -1123,8 +1098,7 @@ async def test_orm_bidirectional_relationship():
         # Test backward relationship: member -> group
         first_member = retrieved_group.members[0]
         assert first_member.group.id == provider_asset_group.id
-        assert first_member.group.name == "Bidirectional Test Group"
-        assert first_member.group.description == "Testing bidirectional relationship"
+        assert first_member.group.id == provider_asset_group.id
         assert first_member.group.is_active is True
 
 
@@ -1218,8 +1192,6 @@ async def test_provider_asset_group_with_asset_group_type():
         # Create ProviderAssetGroup with the asset group type
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=asset_group_type.id,
-            name="Arbitrage Group",
-            description="Group for arbitrage opportunities",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -1229,8 +1201,6 @@ async def test_provider_asset_group_with_asset_group_type():
         # Verify the group was created with correct asset group type
         assert provider_asset_group.id is not None
         assert provider_asset_group.asset_group_type_id == asset_group_type.id
-        assert provider_asset_group.name == "Arbitrage Group"
-        assert provider_asset_group.description == "Group for arbitrage opportunities"
         assert provider_asset_group.is_active is True
 
 
@@ -1242,8 +1212,6 @@ async def test_provider_asset_group_requires_asset_group_type():
     with Session(engine) as session:
         # Attempt to create ProviderAssetGroup without asset_group_type_id
         provider_asset_group = ProviderAssetGroup(
-            name="Invalid Group",
-            description="Group without asset group type",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -1324,8 +1292,6 @@ async def test_asset_group_type_inactive_status():
         # Create ProviderAssetGroup with inactive type (should still work)
         provider_asset_group = ProviderAssetGroup(
             asset_group_type_id=inactive_type.id,
-            name="Group with Inactive Type",
-            description="Group using inactive asset group type",
             is_active=True,
         )
         session.add(provider_asset_group)
@@ -1411,15 +1377,11 @@ async def test_provider_asset_group_with_different_types():
         # Create ProviderAssetGroup instances with different types
         pairs_group = ProviderAssetGroup(
             asset_group_type_id=pairs_trading.id,
-            name="Pairs Trading Group",
-            description="Group for pairs trading",
             is_active=True,
         )
 
         arbitrage_group = ProviderAssetGroup(
             asset_group_type_id=arbitrage.id,
-            name="Arbitrage Group",
-            description="Group for arbitrage",
             is_active=True,
         )
 
@@ -1443,5 +1405,5 @@ async def test_provider_asset_group_with_different_types():
             .one()
         )
 
-        assert retrieved_pairs_group.name == "Pairs Trading Group"
-        assert retrieved_arbitrage_group.name == "Arbitrage Group"
+        assert retrieved_pairs_group.asset_group_type_id == pairs_trading.id
+        assert retrieved_arbitrage_group.asset_group_type_id == arbitrage.id
