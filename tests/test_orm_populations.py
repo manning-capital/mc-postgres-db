@@ -235,9 +235,9 @@ def create_test_data(session: Session):
         provider_asset_group_id=provider_asset_group.id,
         lookback_window_seconds=86400,  # 24 hours
         cointegration_p_value=0.05,
-        ol_mu=0.1,
-        ol_theta=0.5,
-        ol_sigma=0.2,
+        ou_mu=0.1,
+        ou_theta=0.5,
+        ou_sigma=0.2,
         linear_fit_alpha=0.1,
         linear_fit_beta=0.95,
         linear_fit_mse=0.01,

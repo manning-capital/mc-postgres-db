@@ -184,9 +184,9 @@ async def test_create_provider_asset_group_attribute():
         }
     )
     provider_asset_group_attribute_df["cointegration_p_value"] = results.pvalues[:, 1]
-    provider_asset_group_attribute_df["ol_mu"] = mu
-    provider_asset_group_attribute_df["ol_theta"] = theta
-    provider_asset_group_attribute_df["ol_sigma"] = sigma
+    provider_asset_group_attribute_df["ou_mu"] = mu
+    provider_asset_group_attribute_df["ou_theta"] = theta
+    provider_asset_group_attribute_df["ou_sigma"] = sigma
     provider_asset_group_attribute_df["linear_fit_alpha"] = results.params[:, 0]
     provider_asset_group_attribute_df["linear_fit_beta"] = results.params[:, 1]
     provider_asset_group_attribute_df["linear_fit_mse"] = results.mse_resid
@@ -349,9 +349,9 @@ async def test_provider_asset_group_attributes():
             provider_asset_group_id=provider_asset_group.id,
             lookback_window_seconds=3600,  # 1 hour
             cointegration_p_value=0.05,
-            ol_mu=0.1,
-            ol_theta=0.5,
-            ol_sigma=0.2,
+            ou_mu=0.1,
+            ou_theta=0.5,
+            ou_sigma=0.2,
             linear_fit_alpha=1.0,
             linear_fit_beta=0.8,
             linear_fit_mse=0.01,
@@ -364,9 +364,9 @@ async def test_provider_asset_group_attributes():
             provider_asset_group_id=provider_asset_group.id,
             lookback_window_seconds=7200,  # 2 hours
             cointegration_p_value=0.03,
-            ol_mu=0.08,
-            ol_theta=0.6,
-            ol_sigma=0.15,
+            ou_mu=0.08,
+            ou_theta=0.6,
+            ou_sigma=0.15,
             linear_fit_alpha=1.1,
             linear_fit_beta=0.75,
             linear_fit_mse=0.008,
@@ -400,12 +400,12 @@ async def test_provider_asset_group_attributes():
 
         # Verify attributes
         assert retrieved_attr1.cointegration_p_value == 0.05
-        assert retrieved_attr1.ol_mu == 0.1
+        assert retrieved_attr1.ou_mu == 0.1
         assert retrieved_attr1.linear_fit_alpha == 1.0
         assert retrieved_attr1.linear_fit_r_squared == 0.95
 
         assert retrieved_attr2.cointegration_p_value == 0.03
-        assert retrieved_attr2.ol_mu == 0.08
+        assert retrieved_attr2.ou_mu == 0.08
         assert retrieved_attr2.linear_fit_alpha == 1.1
         assert retrieved_attr2.linear_fit_r_squared == 0.97
 
@@ -573,9 +573,9 @@ async def test_asset_group_member_relationships():
             provider_asset_group_id=provider_asset_group.id,
             lookback_window_seconds=3600,
             cointegration_p_value=0.05,
-            ol_mu=0.1,
-            ol_theta=0.5,
-            ol_sigma=0.2,
+            ou_mu=0.1,
+            ou_theta=0.5,
+            ou_sigma=0.2,
         )
         session.add(attribute)
         session.commit()
@@ -599,7 +599,7 @@ async def test_asset_group_member_relationships():
         )
         assert len(attributes) == 1
         assert attributes[0].cointegration_p_value == 0.05
-        assert attributes[0].ol_mu == 0.1
+        assert attributes[0].ou_mu == 0.1
 
 
 @pytest.mark.asyncio
