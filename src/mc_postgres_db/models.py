@@ -759,15 +759,15 @@ class ProviderAssetGroupAttribute(Base):
     )
     ou_mu: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The mu parameter for the Ornstein-Uhlenbeck process",
+        comment="The mu parameter (speed of mean reversion) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
     )
     ou_theta: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The theta parameter for the Ornstein-Uhlenbeck process",
+        comment="The theta parameter (long-term mean) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
     )
     ou_sigma: Mapped[Optional[float]] = mapped_column(
         nullable=True,
-        comment="The sigma parameter for the Ornstein-Uhlenbeck process",
+        comment="The sigma parameter (volatility) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
     )
     linear_fit_alpha: Mapped[Optional[float]] = mapped_column(
         nullable=True,

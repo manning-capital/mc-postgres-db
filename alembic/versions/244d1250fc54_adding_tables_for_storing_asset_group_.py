@@ -95,19 +95,19 @@ def upgrade() -> None:
             "ol_mu",
             sa.Float(),
             nullable=True,
-            comment="The mu parameter for the Ornstein-Uhlenbeck process",
+            comment="The mu parameter (speed of mean reversion) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
         sa.Column(
             "ol_theta",
             sa.Float(),
             nullable=True,
-            comment="The theta parameter for the Ornstein-Uhlenbeck process",
+            comment="The theta parameter (long-term mean) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
         sa.Column(
             "ol_sigma",
             sa.Float(),
             nullable=True,
-            comment="The sigma parameter for the Ornstein-Uhlenbeck process",
+            comment="The sigma parameter (volatility) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
         sa.Column(
             "linear_fit_alpha",

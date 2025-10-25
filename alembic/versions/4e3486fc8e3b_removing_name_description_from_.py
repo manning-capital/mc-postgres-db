@@ -30,7 +30,7 @@ def upgrade() -> None:
             "ou_mu",
             sa.Float(),
             nullable=True,
-            comment="The mu parameter for the Ornstein-Uhlenbeck process",
+            comment="The mu parameter (speed of mean reversion) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
     )
     op.add_column(
@@ -39,7 +39,7 @@ def upgrade() -> None:
             "ou_theta",
             sa.Float(),
             nullable=True,
-            comment="The theta parameter for the Ornstein-Uhlenbeck process",
+            comment="The theta parameter (long-term mean) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
     )
     op.add_column(
@@ -48,7 +48,7 @@ def upgrade() -> None:
             "ou_sigma",
             sa.Float(),
             nullable=True,
-            comment="The sigma parameter for the Ornstein-Uhlenbeck process",
+            comment="The sigma parameter (volatility) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
     )
     op.drop_column("provider_asset_group_attribute", "ol_sigma")
@@ -67,7 +67,7 @@ def downgrade() -> None:
             sa.DOUBLE_PRECISION(precision=53),
             autoincrement=False,
             nullable=True,
-            comment="The theta parameter for the Ornstein-Uhlenbeck process",
+            comment="The theta parameter (long-term mean) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
     )
     op.add_column(
@@ -77,7 +77,7 @@ def downgrade() -> None:
             sa.DOUBLE_PRECISION(precision=53),
             autoincrement=False,
             nullable=True,
-            comment="The mu parameter for the Ornstein-Uhlenbeck process",
+            comment="The mu parameter (speed of mean reversion) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
     )
     op.add_column(
@@ -87,7 +87,7 @@ def downgrade() -> None:
             sa.DOUBLE_PRECISION(precision=53),
             autoincrement=False,
             nullable=True,
-            comment="The sigma parameter for the Ornstein-Uhlenbeck process",
+            comment="The sigma parameter (volatility) for the Ornstein-Uhlenbeck process: dX(t) = μ(θ - X(t))dt + σdW(t)",
         ),
     )
     op.drop_column("provider_asset_group_attribute", "ou_sigma")
