@@ -757,15 +757,15 @@ class ProviderAssetGroupAttribute(Base):
         nullable=True,
         comment="The cointegration p-value for the asset group",
     )
-    ol_mu: Mapped[Optional[float]] = mapped_column(
+    ou_mu: Mapped[Optional[float]] = mapped_column(
         nullable=True,
         comment="The mu parameter for the Ornstein-Uhlenbeck process",
     )
-    ol_theta: Mapped[Optional[float]] = mapped_column(
+    ou_theta: Mapped[Optional[float]] = mapped_column(
         nullable=True,
         comment="The theta parameter for the Ornstein-Uhlenbeck process",
     )
-    ol_sigma: Mapped[Optional[float]] = mapped_column(
+    ou_sigma: Mapped[Optional[float]] = mapped_column(
         nullable=True,
         comment="The sigma parameter for the Ornstein-Uhlenbeck process",
     )
