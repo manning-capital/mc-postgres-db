@@ -108,35 +108,37 @@ def _cleanup_old_test_containers():
     """
     try:
         client = docker.from_env()
-        
+
         # Find containers with our test naming pattern
         test_containers = client.containers.list(
             all=True,  # Include stopped containers
-            filters={"name": "mc-postgres-test-*"}
+            filters={"name": "mc-postgres-test-*"},
         )
-        
+
         if test_containers:
             LOGGER.info(f"Found {len(test_containers)} old test containers to clean up")
-            
+
             for container in test_containers:
                 try:
                     container_name = container.name
                     LOGGER.info(f"Cleaning up old test container: {container_name}")
-                    
+
                     # Stop if running
                     if container.status == "running":
                         container.stop(timeout=5)
                         LOGGER.info(f"Stopped container: {container_name}")
-                    
+
                     # Remove the container
                     container.remove()
                     LOGGER.info(f"Removed container: {container_name}")
-                    
+
                 except Exception as e:
-                    LOGGER.warning(f"Failed to clean up container {container.name}: {e}")
+                    LOGGER.warning(
+                        f"Failed to clean up container {container.name}: {e}"
+                    )
         else:
             LOGGER.info("No old test containers found to clean up")
-            
+
     except Exception as e:
         LOGGER.warning(f"Failed to clean up old test containers: {e}")
 
@@ -148,47 +150,27 @@ def _cleanup_old_test_volumes():
     """
     try:
         client = docker.from_env()
-        
+
         # Find volumes with our test naming pattern (both main and parent volumes)
-        test_volumes = client.volumes.list(
-            filters={"name": "mc-postgres-test-*"}
-        )
-        
+        test_volumes = client.volumes.list(filters={"name": "mc-postgres-test-*"})
+
         if test_volumes:
             LOGGER.info(f"Found {len(test_volumes)} old test volumes to clean up")
-            
+
             for volume in test_volumes:
                 try:
                     volume_name = volume.name
                     LOGGER.info(f"Cleaning up old test volume: {volume_name}")
-                    
+
                     # Remove the volume
                     volume.remove()
                     LOGGER.info(f"Removed volume: {volume_name}")
-                    
+
                 except Exception as e:
                     LOGGER.warning(f"Failed to clean up volume {volume.name}: {e}")
         else:
             LOGGER.info("No old test volumes found to clean up")
-        
-        # Also clean up orphaned anonymous volumes (dangling volumes)
-        # These are volumes not referenced by any container
-        try:
-            dangling_volumes = client.volumes.list(filters={"dangling": True})
-            if dangling_volumes:
-                LOGGER.info(f"Found {len(dangling_volumes)} dangling volumes to clean up")
-                for volume in dangling_volumes:
-                    try:
-                        LOGGER.info(f"Cleaning up dangling volume: {volume.name}")
-                        volume.remove()
-                        LOGGER.info(f"Removed dangling volume: {volume.name}")
-                    except Exception as e:
-                        LOGGER.warning(f"Failed to clean up dangling volume {volume.name}: {e}")
-            else:
-                LOGGER.info("No dangling volumes found to clean up")
-        except Exception as e:
-            LOGGER.warning(f"Failed to clean up dangling volumes: {e}")
-            
+
     except Exception as e:
         LOGGER.warning(f"Failed to clean up old test volumes: {e}")
 
@@ -245,7 +227,7 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
     LOGGER.info("Cleaning up any old test containers and volumes...")
     _cleanup_old_test_containers()
     _cleanup_old_test_volumes()
-    
+
     # Get PostgreSQL version from environment variable or default to latest
     postgres_version = os.getenv("POSTGRES_VERSION", "latest")
 
@@ -302,10 +284,10 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
             detach=True,
             remove=False,  # We'll remove manually for better control
         )
-        
+
         # Get the volume reference for cleanup
         volume = client.volumes.get(volume_name)
-        
+
         # Wait for PostgreSQL to be ready
         _wait_for_postgres("localhost", port, db_user, db_password, db_name)
 

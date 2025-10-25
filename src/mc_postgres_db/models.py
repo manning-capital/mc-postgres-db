@@ -84,7 +84,7 @@ class Asset(Base):
         "Asset", remote_side=[id]
     )
     derived_assets: Mapped[list["Asset"]] = relationship(
-        "Asset", remote_side=[underlying_asset_id]
+        "Asset", remote_side=[underlying_asset_id], overlaps="underlying_asset"
     )
     is_active: Mapped[bool] = mapped_column(
         default=True, comment="Whether the asset is active"
@@ -172,7 +172,7 @@ class Provider(Base):
         "Provider", remote_side=[id]
     )
     derived_providers: Mapped[list["Provider"]] = relationship(
-        "Provider", remote_side=[underlying_provider_id]
+        "Provider", remote_side=[underlying_provider_id], overlaps="underlying_provider"
     )
     url: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True, comment="The URL of the provider"
@@ -654,12 +654,6 @@ class ProviderAssetGroup(Base):
         comment="The identifier of the asset group type",
     )
     asset_group_type: Mapped["AssetGroupType"] = relationship("AssetGroupType")
-    name: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="The name of the asset group"
-    )
-    description: Mapped[Optional[str]] = mapped_column(
-        String(1000), nullable=True, comment="The description of the asset group"
-    )
     members: Mapped[list["ProviderAssetGroupMember"]] = relationship(
         "ProviderAssetGroupMember",
         cascade="all, delete-orphan",
@@ -681,7 +675,7 @@ class ProviderAssetGroup(Base):
     )
 
     def __repr__(self):
-        return f"{ProviderAssetGroup.__name__}({self.id}, {self.name})"
+        return f"{ProviderAssetGroup.__name__}({self.id})"
 
 
 class ProviderAssetGroupMember(Base):
@@ -722,7 +716,7 @@ class ProviderAssetGroupMember(Base):
         comment="The order of the asset pair within the group (1, 2, 3, etc.). Required field for sequencing members within the group.",
     )
     group: Mapped["ProviderAssetGroup"] = relationship(
-        "ProviderAssetGroup",
+        "ProviderAssetGroup", overlaps="members"
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
