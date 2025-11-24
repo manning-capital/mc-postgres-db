@@ -6,10 +6,9 @@ import pandas as pd
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "src"))
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
-import pytest
-from sqlalchemy import Engine, select, text
-from sqlalchemy.orm import Session
 import docker
+from sqlalchemy import Engine, text, select
+from sqlalchemy.orm import Session
 
 from mc_postgres_db.models import Base, AssetType
 from mc_postgres_db.testing.utilities import (
@@ -55,9 +54,10 @@ class TestPostgresHarnessNoPrefect:
             for table_name, table in Base.metadata.tables.items():
                 stmt = select(table)
                 df = pd.read_sql(stmt, engine)
-                assert df.columns.tolist().sort() == [
-                    col.name for col in table.columns
-                ].sort()
+                assert (
+                    df.columns.tolist().sort()
+                    == [col.name for col in table.columns].sort()
+                )
 
     def test_can_insert_and_query_data(self):
         """Test that we can insert and query data using the yielded engine."""
@@ -141,4 +141,3 @@ class TestPostgresHarnessNoPrefect:
         ) as engine:
             assert engine is not None
             assert isinstance(engine, Engine)
-

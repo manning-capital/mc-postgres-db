@@ -206,31 +206,33 @@ def _wait_for_postgres(
 
 
 @contextmanager
-def postgres_test_harness(prefect_server_startup_timeout: int = 30, use_prefect: bool = True):
+def postgres_test_harness(
+    prefect_server_startup_timeout: int = 30, use_prefect: bool = True
+):
     """
     A test harness for testing the PostgreSQL database using Docker.
-    
+
     Args:
         prefect_server_startup_timeout: Timeout in seconds for Prefect server startup.
             Only used when use_prefect=True.
         use_prefect: If True, initializes Prefect test harness and sets up secrets.
             If False, skips Prefect setup and yields the SQLAlchemy engine instead.
-    
+
     Yields:
         If use_prefect=True: None (Prefect is initialized and database URL is set as a secret)
         If use_prefect=False: Engine (SQLAlchemy engine connected to the test database)
-    
+
     Example with Prefect:
         ```python
         with postgres_test_harness():
             # Prefect is initialized, database URL is available as a secret
             pass
         ```
-    
+
     Example without Prefect:
         ```python
         from sqlalchemy import text
-        
+
         with postgres_test_harness(use_prefect=False) as engine:
             # Use the engine directly for testing
             with engine.connect() as conn:

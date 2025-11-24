@@ -7,4 +7,3 @@ without conflicts.
 """
 
 # No fixtures needed - tests will use postgres_test_harness directly with use_prefect=False
-
