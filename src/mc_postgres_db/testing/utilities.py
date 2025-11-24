@@ -9,9 +9,6 @@ from urllib.parse import urlparse
 import docker
 from sqlalchemy import Engine, text, create_engine
 from sqlalchemy.exc import OperationalError
-from prefect.settings import PREFECT_API_URL
-from prefect.blocks.system import Secret
-from prefect.testing.utilities import prefect_test_harness
 
 import mc_postgres_db.models as models
 
@@ -209,9 +206,36 @@ def _wait_for_postgres(
 
 
 @contextmanager
-def postgres_test_harness(prefect_server_startup_timeout: int = 30):
+def postgres_test_harness(prefect_server_startup_timeout: int = 30, use_prefect: bool = True):
     """
     A test harness for testing the PostgreSQL database using Docker.
+    
+    Args:
+        prefect_server_startup_timeout: Timeout in seconds for Prefect server startup.
+            Only used when use_prefect=True.
+        use_prefect: If True, initializes Prefect test harness and sets up secrets.
+            If False, skips Prefect setup and yields the SQLAlchemy engine instead.
+    
+    Yields:
+        If use_prefect=True: None (Prefect is initialized and database URL is set as a secret)
+        If use_prefect=False: Engine (SQLAlchemy engine connected to the test database)
+    
+    Example with Prefect:
+        ```python
+        with postgres_test_harness():
+            # Prefect is initialized, database URL is available as a secret
+            pass
+        ```
+    
+    Example without Prefect:
+        ```python
+        from sqlalchemy import text
+        
+        with postgres_test_harness(use_prefect=False) as engine:
+            # Use the engine directly for testing
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT 1"))
+        ```
     """
     # Clean up any old test containers and volumes first
     LOGGER.info("Cleaning up any old test containers and volumes...")
@@ -325,36 +349,45 @@ def postgres_test_harness(prefect_server_startup_timeout: int = 30):
         LOGGER.info("Creating all tables in the PostgreSQL database...")
         models.Base.metadata.create_all(engine)
 
-        # Initialize the Prefect test harness
-        with prefect_test_harness(
-            server_startup_timeout=prefect_server_startup_timeout
-        ):
-            # Check if the PREFECT_API_URL environment variable is set to localhost
-            prefect_api_url = urlparse(PREFECT_API_URL.value())
-            print(f"URL hostname: {prefect_api_url.hostname}")
-            print(f"URL port: {prefect_api_url.port}")
-            print(f"URL netloc: {prefect_api_url.netloc}")
-            valid_hostnames = ["localhost", "127.0.0.1"]
-            if prefect_api_url.hostname not in valid_hostnames:
-                raise ValueError(
-                    "The PREFECT_API_URL environment variable has it's hostname set to something other than localhost"
-                )
+        if use_prefect:
+            # Lazy import Prefect only when needed
+            from prefect.settings import PREFECT_API_URL
+            from prefect.blocks.system import Secret
+            from prefect.testing.utilities import prefect_test_harness
 
-            # Set the postgres-url secret to the URL of the PostgreSQL database
-            Secret(value=database_url).save("postgres-url")  # type: ignore
+            # Initialize the Prefect test harness
+            with prefect_test_harness(
+                server_startup_timeout=prefect_server_startup_timeout
+            ):
+                # Check if the PREFECT_API_URL environment variable is set to localhost
+                prefect_api_url = urlparse(PREFECT_API_URL.value())
+                print(f"URL hostname: {prefect_api_url.hostname}")
+                print(f"URL port: {prefect_api_url.port}")
+                print(f"URL netloc: {prefect_api_url.netloc}")
+                valid_hostnames = ["localhost", "127.0.0.1"]
+                if prefect_api_url.hostname not in valid_hostnames:
+                    raise ValueError(
+                        "The PREFECT_API_URL environment variable has it's hostname set to something other than localhost"
+                    )
 
-            # Check if the secret is set
-            postgres_url_secret = Secret.load("postgres-url").get()
-            if postgres_url_secret is None or postgres_url_secret == "":
-                raise ValueError("The postgres-url secret is not set.")
+                # Set the postgres-url secret to the URL of the PostgreSQL database
+                Secret(value=database_url).save("postgres-url")  # type: ignore
 
-            # Check if the secret is the same as the database URL
-            if postgres_url_secret != database_url:
-                raise ValueError(
-                    "The postgres-url secret is not the same as the database URL."
-                )
+                # Check if the secret is set
+                postgres_url_secret = Secret.load("postgres-url").get()
+                if postgres_url_secret is None or postgres_url_secret == "":
+                    raise ValueError("The postgres-url secret is not set.")
 
-            yield
+                # Check if the secret is the same as the database URL
+                if postgres_url_secret != database_url:
+                    raise ValueError(
+                        "The postgres-url secret is not the same as the database URL."
+                    )
+
+                yield
+        else:
+            # Yield the engine directly without Prefect setup
+            yield engine
 
     finally:
         # Clean-up the database (only if engine was created successfully)

@@ -4,8 +4,8 @@ import datetime as dt
 
 import pandas as pd
 
-sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
-sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 import pytest
 from sqlalchemy import Engine, select, create_engine
@@ -71,83 +71,6 @@ def test_all_models_are_created():
         stmt = select(table)
         df = pd.read_sql(stmt, engine)
         assert df.columns.tolist().sort() == [col.name for col in table.columns].sort()
-
-
-def test_create_an_asset_type_model():
-    from mc_postgres_db.models import AssetType
-
-    # Get the engine.
-    engine = get_engine()
-
-    # Create a new asset type in a session.
-    with Session(engine) as session:
-        # Clear the database.
-        clear_database(engine)
-
-        # Create a new asset type.
-        asset_type = AssetType(
-            name="Test Asset Type",
-            description="Test Asset Type Description",
-        )
-        session.add(asset_type)
-        session.commit()
-
-    # Query the asset type.
-    with Session(engine) as session:
-        stmt = select(AssetType)
-        asset_type_result = session.execute(stmt).scalar_one()
-        assert asset_type_result.id is not None
-        assert asset_type_result.name == "Test Asset Type"
-        assert asset_type_result.description == "Test Asset Type Description"
-        assert asset_type_result.is_active is True
-        assert asset_type_result.created_at is not None
-        assert asset_type_result.updated_at is not None
-
-
-def test_create_an_asset_model():
-    from mc_postgres_db.models import Asset, AssetType
-
-    # Get the engine.
-    engine = get_engine()
-
-    # Create a new asset type.
-    with Session(engine) as session:
-        # Clear the database.
-        clear_database(engine)
-
-        # Create a new asset type.
-        asset_type = AssetType(
-            name="Test Asset Type",
-            description="Test Asset Type Description",
-        )
-        session.add(asset_type)
-        session.commit()
-
-        # Get the asset type id.
-        stmt = select(AssetType)
-        asset_type_result = session.execute(stmt).scalar_one()
-        asset_type_id = asset_type_result.id
-
-        # Create a new asset.
-        asset = Asset(
-            asset_type_id=asset_type_id,
-            name="Test Asset",
-            description="Test Asset Description",
-            symbol="TST",
-            is_active=True,
-        )
-        session.add(asset)
-        session.commit()
-
-        # Query the asset.
-        stmt = select(Asset)
-        asset_result = session.execute(stmt).scalar_one()
-        assert asset_result.id is not None
-        assert asset_result.asset_type_id == asset_type_id
-        assert asset_result.name == "Test Asset"
-        assert asset_result.description == "Test Asset Description"
-        assert asset_result.symbol == "TST"
-        assert asset_result.is_active is True
 
 
 def test_use_set_data_upsert_to_add_provider_market_data():
