@@ -297,6 +297,9 @@ mc-postgres-db/
 │           ├── __init__.py
 │           └── utilities.py
 ├── tests/                    # Unit and integration tests
+│   ├── with_prefect/        # Tests that use Prefect
+│   ├── no_prefect/          # Tests that don't use Prefect
+│   └── utils.py             # Shared test utilities
 ├── alembic/                  # Database migrations
 ├── pyproject.toml            # Project configuration and dependencies
 ├── uv.lock                   # Locked dependency versions
@@ -344,15 +347,17 @@ If Docker is not available, you may need to install Docker Desktop or start the 
 
 ### `postgres_test_harness`
 
-The `postgres_test_harness` context manager (found in `mc_postgres_db.testing.utilities`) creates a temporary PostgreSQL database using Docker, initializes all ORM models, and updates the Prefect secret that stores the database URL. This ensures that all Prefect tasks which retrieve the database engine (both sync and async) will use this temporary PostgreSQL database during your tests, without requiring any patching or changes to task code.
+The `postgres_test_harness` context manager (found in `mc_postgres_db.testing.utilities`) creates a temporary PostgreSQL database using Docker and initializes all ORM models. It can optionally integrate with Prefect to set up database secrets, or be used independently without Prefect.
 
 **Key benefits:**
-- No need to change or mock every Prefect flow or task that uses the database engine.
-- All Prefect tasks that call `get_engine` (sync or async) will automatically use the temporary PostgreSQL database.
+- No need to change or mock every Prefect flow or task that uses the database engine (when using Prefect mode).
+- All Prefect tasks that call `get_engine` (sync or async) will automatically use the temporary PostgreSQL database (when using Prefect mode).
+- Can be used independently of Prefect for direct database testing.
 - The database is created fresh for each test session or function (depending on fixture scope), ensuring isolation and repeatability.
 - Uses ephemeral storage (no volume mounting) for complete isolation between test runs.
 - Comprehensive safety checks to prevent accidental connection to production databases.
 - At the end of the test, the Docker container and all tables are cleaned up.
+- Prefect imports are lazy-loaded, so Prefect is only required when `use_prefect=True`.
 
 **Safety Features:**
 - Validates that the database connection is to localhost only
@@ -364,10 +369,14 @@ The `postgres_test_harness` context manager (found in `mc_postgres_db.testing.ut
 - PostgreSQL version can be controlled via the `POSTGRES_VERSION` environment variable (defaults to `latest`)
 - Test database uses ephemeral storage for complete isolation
 - Automatic port selection to avoid conflicts
+- `use_prefect`: Boolean flag to enable/disable Prefect integration (default: `True`)
+- `prefect_server_startup_timeout`: Timeout in seconds for Prefect server startup (only used when `use_prefect=True`, default: `30`)
 
-### Usage with Pytest
+### Usage with Prefect (Default)
 
-You can use the harness as a fixture in your tests. For example:
+When `use_prefect=True` (the default), the harness initializes Prefect's test harness and sets up the database URL as a Prefect secret. This ensures that all Prefect tasks which retrieve the database engine (both sync and async) will use this temporary PostgreSQL database during your tests.
+
+You can use the harness as a fixture in your tests:
 
 ```python
 import pytest
@@ -383,7 +392,7 @@ def test_my_flow():
     ...
 ```
 
-If you are also testing Prefect flows, the postgres harness will already use Prefect's harness to ensure isolation:
+For session-scoped tests with Prefect flows:
 
 ```python
 import pytest
@@ -395,7 +404,83 @@ def postgres_harness():
         yield
 ```
 
-Now, all your tests (including those that run Prefect flows) will use the temporary PostgreSQL database, and you don't need to modify your flows or tasks to support testing.
+### Usage without Prefect
+
+When `use_prefect=False`, the harness skips Prefect initialization and yields the SQLAlchemy engine directly. This is useful for tests that don't use Prefect or when you want to test database functionality independently.
+
+**As a context manager:**
+
+```python
+from mc_postgres_db.testing.utilities import postgres_test_harness
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+from mc_postgres_db.models import AssetType
+
+# Use the harness without Prefect
+with postgres_test_harness(use_prefect=False) as engine:
+    # Use the engine directly
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        assert result.fetchone()[0] == 1
+    
+    # Or use with SQLAlchemy sessions
+    with Session(engine) as session:
+        asset_type = AssetType(name="Test Asset")
+        session.add(asset_type)
+        session.commit()
+```
+
+**As a pytest fixture:**
+
+You can also use the harness as a pytest fixture, which allows you to pass the engine as a parameter to your test functions:
+
+```python
+import pytest
+from sqlalchemy import Engine, text
+from sqlalchemy.orm import Session
+from mc_postgres_db.testing.utilities import postgres_test_harness
+from mc_postgres_db.models import AssetType
+
+@pytest.fixture
+def db_engine():
+    """Fixture that provides a database engine without Prefect."""
+    with postgres_test_harness(use_prefect=False) as engine:
+        yield engine
+
+def test_database_connection(db_engine: Engine):
+    """Test that we can connect to the database."""
+    with db_engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        assert result.fetchone()[0] == 1
+
+def test_create_asset_type(db_engine: Engine):
+    """Test creating an asset type using the engine fixture."""
+    with Session(db_engine) as session:
+        asset_type = AssetType(
+            name="Test Asset Type",
+            description="Test Description"
+        )
+        session.add(asset_type)
+        session.commit()
+        
+        # Verify it was created
+        assert asset_type.id is not None
+        assert asset_type.is_active is True
+```
+
+**Note:** When `use_prefect=False`, the harness yields the engine. When `use_prefect=True` (default), it yields `None` (Prefect is initialized and the database URL is available as a secret).
+
+### Test Organization
+
+The test suite is organized into two directories to isolate Prefect-dependent and Prefect-independent tests:
+
+- **`tests/with_prefect/`**: Tests that use Prefect. These tests have a `conftest.py` that sets up the Prefect test harness automatically.
+- **`tests/no_prefect/`**: Tests that don't use Prefect. These tests can use `postgres_test_harness(use_prefect=False)` without conflicts.
+
+This organization ensures that:
+- Tests that need Prefect have it available via the session fixture
+- Tests that don't need Prefect can run without Prefect dependencies
+- No namespace conflicts occur between test directories and the Prefect package
 
 ### Additional Testing Utilities
 
