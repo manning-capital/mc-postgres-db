@@ -54,9 +54,8 @@ class TestPostgresHarnessNoPrefect:
             for table_name, table in Base.metadata.tables.items():
                 stmt = select(table)
                 df = pd.read_sql(stmt, engine)
-                assert (
-                    df.columns.tolist().sort()
-                    == [col.name for col in table.columns].sort()
+                assert sorted(df.columns.tolist()) == sorted(
+                    [col.name for col in table.columns]
                 )
 
     def test_can_insert_and_query_data(self):

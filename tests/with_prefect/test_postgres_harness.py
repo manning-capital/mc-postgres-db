@@ -70,7 +70,9 @@ def test_all_models_are_created():
     for _, table in Base.metadata.tables.items():
         stmt = select(table)
         df = pd.read_sql(stmt, engine)
-        assert df.columns.tolist().sort() == [col.name for col in table.columns].sort()
+        assert sorted(df.columns.tolist()) == sorted(
+            [col.name for col in table.columns]
+        )
 
 
 def test_use_set_data_upsert_to_add_provider_market_data():
