@@ -793,6 +793,7 @@ class ProviderAssetGroupAttribute(Base):
     def __repr__(self):
         return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_asset_group_id={self.provider_asset_group_id})"
 
+
 class Portfolio(Base):
     __tablename__ = "portfolio"
     __table_args__ = {
@@ -830,6 +831,7 @@ class Portfolio(Base):
 
     def __repr__(self):
         return f"{Portfolio.__name__}({self.id}, {self.name})"
+
 
 class TransactionType(Base):
     __tablename__ = "transaction_type"
@@ -898,7 +900,9 @@ class PortfolioTransaction(Base):
         nullable=False,
         comment="The identifier of the portfolio this transaction belongs to",
     )
-    portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="transactions")
+    portfolio: Mapped["Portfolio"] = relationship(
+        "Portfolio", back_populates="transactions"
+    )
     from_asset_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("asset.id"),
         nullable=True,
