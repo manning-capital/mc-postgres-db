@@ -1,8 +1,8 @@
 """Adding tables for transaction data.
 
-Revision ID: bf20d807ffe2
+Revision ID: 0ae3917aff7f
 Revises: 4e3486fc8e3b
-Create Date: 2025-12-19 10:41:18.842690
+Create Date: 2025-12-19 10:44:17.127364
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "bf20d807ffe2"
+revision: str = "0ae3917aff7f"
 down_revision: Union[str, Sequence[str], None] = "4e3486fc8e3b"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
