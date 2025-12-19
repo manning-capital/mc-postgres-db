@@ -793,6 +793,43 @@ class ProviderAssetGroupAttribute(Base):
     def __repr__(self):
         return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_asset_group_id={self.provider_asset_group_id})"
 
+class Portfolio(Base):
+    __tablename__ = "portfolio"
+    __table_args__ = {
+        "comment": "The portfolio, represents a collection of assets and their transactions for tracking investment strategies and performance."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the portfolio"
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the portfolio"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the portfolio"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the portfolio is active"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the portfolio",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the portfolio",
+    )
+
+    # Relationship to transactions
+    transactions: Mapped[list["PortfolioTransaction"]] = relationship(
+        "PortfolioTransaction", back_populates="portfolio"
+    )
+
+    def __repr__(self):
+        return f"{Portfolio.__name__}({self.id}, {self.name})"
 
 class TransactionType(Base):
     __tablename__ = "transaction_type"
@@ -857,9 +894,11 @@ class PortfolioTransaction(Base):
     )
     transaction_type: Mapped["TransactionType"] = relationship("TransactionType")
     portfolio_id: Mapped[int] = mapped_column(
+        ForeignKey("portfolio.id"),
         nullable=False,
         comment="The identifier of the portfolio this transaction belongs to",
     )
+    portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="transactions")
     from_asset_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("asset.id"),
         nullable=True,
