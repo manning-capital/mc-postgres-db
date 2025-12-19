@@ -792,3 +792,217 @@ class ProviderAssetGroupAttribute(Base):
 
     def __repr__(self):
         return f"{ProviderAssetGroupAttribute.__name__}(timestamp={self.timestamp}, provider_asset_group_id={self.provider_asset_group_id})"
+
+
+class Portfolio(Base):
+    __tablename__ = "portfolio"
+    __table_args__ = {
+        "comment": "The portfolio, represents a collection of assets and their transactions for tracking investment strategies and performance."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the portfolio"
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="The name of the portfolio"
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000), nullable=True, comment="The description of the portfolio"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the portfolio is active"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the portfolio",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the portfolio",
+    )
+
+    # Relationship to transactions
+    transactions: Mapped[list["PortfolioTransaction"]] = relationship(
+        "PortfolioTransaction", back_populates="portfolio"
+    )
+
+    def __repr__(self):
+        return f"{Portfolio.__name__}({self.id}, {self.name})"
+
+
+class TransactionType(Base):
+    __tablename__ = "transaction_type"
+    __table_args__ = {
+        "comment": "The type of transaction, e.g. buy, sell, transfer, short, cover, etc."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the transaction type"
+    )
+    symbol: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="The symbol of the transaction type, e.g. BUY, SELL, TRANSFER, SHORT, COVER, etc.",
+        unique=True,
+    )
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="The name of the transaction type, e.g. Buy, Sell, Transfer, Short, Cover, etc.",
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000),
+        nullable=True,
+        comment="The description of the transaction type",
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the transaction type is active"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the transaction type",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the transaction type",
+    )
+
+    def __repr__(self):
+        return f"{TransactionType.__name__}({self.id}, {self.name})"
+
+
+class PortfolioTransaction(Base):
+    __tablename__ = "portfolio_transaction"
+    __table_args__ = {
+        "comment": "Represents individual portfolio transactions including buys, sells, and transfers. Used to track all asset movements within and between portfolios."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the transaction"
+    )
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        nullable=False, comment="The date and time when the transaction occurred"
+    )
+    transaction_type_id: Mapped[int] = mapped_column(
+        ForeignKey("transaction_type.id"),
+        nullable=False,
+        comment="The identifier of the transaction type",
+    )
+    transaction_type: Mapped["TransactionType"] = relationship("TransactionType")
+    portfolio_id: Mapped[int] = mapped_column(
+        ForeignKey("portfolio.id"),
+        nullable=False,
+        comment="The identifier of the portfolio this transaction belongs to",
+    )
+    portfolio: Mapped["Portfolio"] = relationship(
+        "Portfolio", back_populates="transactions"
+    )
+    from_asset_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("asset.id"),
+        nullable=True,
+        comment="The identifier of the source asset in the transaction (e.g., cash for buys, the asset being sold for sells)",
+    )
+    from_asset: Mapped[Optional["Asset"]] = relationship(
+        "Asset", foreign_keys=[from_asset_id]
+    )
+    to_asset_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("asset.id"),
+        nullable=True,
+        comment="The identifier of the destination asset in the transaction (e.g., the asset being bought for buys, cash for sells)",
+    )
+    to_asset: Mapped[Optional["Asset"]] = relationship(
+        "Asset", foreign_keys=[to_asset_id]
+    )
+    quantity: Mapped[float] = mapped_column(
+        nullable=False, comment="The number of units/shares in the transaction"
+    )
+    price: Mapped[float] = mapped_column(
+        nullable=False, comment="The price per unit at which the transaction occurred"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the transaction",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the transaction",
+    )
+
+    # Relationship to groups
+    groups: Mapped[list["TransactionGroup"]] = relationship(
+        "TransactionGroup",
+        secondary="transaction_group_member",
+        back_populates="transactions",
+    )
+
+    def __repr__(self):
+        return f"{PortfolioTransaction.__name__}(id={self.id}, timestamp={self.timestamp}, transaction_type={self.transaction_type}, portfolio_id={self.portfolio_id})"
+
+
+class TransactionGroup(Base):
+    __tablename__ = "transaction_group"
+    __table_args__ = {
+        "comment": "Groups related transactions together for market neutral and paired trading strategies. Used to link offsetting long and short positions."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the transaction group"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp when this group was created",
+    )
+
+    # Relationship to transactions
+    transactions: Mapped[list["PortfolioTransaction"]] = relationship(
+        "PortfolioTransaction",
+        secondary="transaction_group_member",
+        back_populates="groups",
+    )
+
+    def __repr__(self):
+        return f"{TransactionGroup.__name__}(id={self.id})"
+
+
+class TransactionGroupMember(Base):
+    __tablename__ = "transaction_group_member"
+    __table_args__ = {
+        "comment": "Junction table linking transactions to their groups. Enables many-to-many relationship between transactions and groups."
+    }
+
+    transaction_group_id: Mapped[int] = mapped_column(
+        ForeignKey("transaction_group.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the transaction group",
+    )
+    transaction_group: Mapped["TransactionGroup"] = relationship(
+        "TransactionGroup", overlaps="transactions"
+    )
+    portfolio_transaction_id: Mapped[int] = mapped_column(
+        ForeignKey("portfolio_transaction.id"),
+        primary_key=True,
+        nullable=False,
+        comment="The identifier of the portfolio transaction",
+    )
+    portfolio_transaction: Mapped["PortfolioTransaction"] = relationship(
+        "PortfolioTransaction", overlaps="groups"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the transaction group member",
+    )
+
+    def __repr__(self):
+        return f"{TransactionGroupMember.__name__}(transaction_group_id={self.transaction_group_id}, portfolio_transaction_id={self.portfolio_transaction_id})"
