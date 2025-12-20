@@ -1,4 +1,4 @@
-# Postgres DB - Manning Capital
+# Postgres Database - Manning Capital
 
 A Python package containing SQLAlchemy ORM models for a PostgreSQL database that powers a personal quantitative trading and investment analysis platform.
 
