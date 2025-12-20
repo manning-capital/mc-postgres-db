@@ -944,6 +944,13 @@ class PortfolioTransaction(Base):
         back_populates="transactions",
     )
 
+    # Relationship to status history
+    statuses: Mapped[list["TransactionStatus"]] = relationship(
+        "TransactionStatus",
+        back_populates="portfolio_transaction",
+        order_by="TransactionStatus.timestamp.asc()",
+    )
+
     def __repr__(self):
         return f"{PortfolioTransaction.__name__}(id={self.id}, timestamp={self.timestamp}, transaction_type={self.transaction_type}, portfolio_id={self.portfolio_id})"
 
@@ -1006,3 +1013,80 @@ class TransactionGroupMember(Base):
 
     def __repr__(self):
         return f"{TransactionGroupMember.__name__}(transaction_group_id={self.transaction_group_id}, portfolio_transaction_id={self.portfolio_transaction_id})"
+
+
+class TransactionStatusType(Base):
+    __tablename__ = "transaction_status_type"
+    __table_args__ = {
+        "comment": "The type of transaction status, e.g. Pending, Open, Closed, Cancelled, etc."
+    }
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, comment="The unique identifier of the transaction status type"
+    )
+    symbol: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="The symbol of the transaction status type, e.g. PENDING, OPEN, CLOSED, CANCELLED, etc.",
+        unique=True,
+    )
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="The name of the transaction status type, e.g. Pending, Open, Closed, Cancelled, etc.",
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        String(1000),
+        nullable=True,
+        comment="The description of the transaction status type",
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True, comment="Whether the transaction status type is active"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+        comment="The timestamp of the creation of the transaction status type",
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        nullable=False,
+        server_onupdate=func.now(),
+        server_default=func.now(),
+        comment="The timestamp of the last update of the transaction status type",
+    )
+
+    def __repr__(self):
+        return f"{TransactionStatusType.__name__}({self.id}, {self.name})"
+
+
+class TransactionStatus(Base):
+    __tablename__ = "transaction_status"
+    __table_args__ = {
+        "comment": "Time series table storing status updates for portfolio transactions. Tracks the status history of transactions over time, allowing for audit trails and status change monitoring."
+    }
+
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        nullable=False,
+        primary_key=True,
+        comment="The timestamp when the status was recorded",
+    )
+    portfolio_transaction_id: Mapped[int] = mapped_column(
+        ForeignKey("portfolio_transaction.id"),
+        nullable=False,
+        primary_key=True,
+        comment="The identifier of the portfolio transaction",
+    )
+    portfolio_transaction: Mapped["PortfolioTransaction"] = relationship(
+        "PortfolioTransaction", back_populates="statuses"
+    )
+    transaction_status_type_id: Mapped[int] = mapped_column(
+        ForeignKey("transaction_status_type.id"),
+        nullable=False,
+        comment="The identifier of the transaction status type",
+    )
+    transaction_status_type: Mapped["TransactionStatusType"] = relationship(
+        "TransactionStatusType"
+    )
+
+    def __repr__(self):
+        return f"{TransactionStatus.__name__}(timestamp={self.timestamp}, portfolio_transaction_id={self.portfolio_transaction_id}, transaction_status_type_id={self.transaction_status_type_id})"
