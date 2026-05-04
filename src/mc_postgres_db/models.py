@@ -994,7 +994,7 @@ class TransactionGroupMember(Base):
         comment="The identifier of the transaction group",
     )
     transaction_group: Mapped["TransactionGroup"] = relationship(
-        "TransactionGroup", overlaps="groups"
+        "TransactionGroup", overlaps="groups,transactions"
     )
     portfolio_transaction_id: Mapped[int] = mapped_column(
         ForeignKey("portfolio_transaction.id"),
@@ -1003,7 +1003,7 @@ class TransactionGroupMember(Base):
         comment="The identifier of the portfolio transaction",
     )
     portfolio_transaction: Mapped["PortfolioTransaction"] = relationship(
-        "PortfolioTransaction", overlaps="transactions"
+        "PortfolioTransaction", overlaps="groups,transactions"
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
